@@ -1,6 +1,4 @@
-package com.loopers.application.user;
-
-import com.loopers.domain.user.User;
+package com.loopers.domain.user;
 
 public record UserInfo(String userId, String gender, String birthDate, String email) {
     public static UserInfo from(User user) {

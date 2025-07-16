@@ -1,7 +1,6 @@
 package com.loopers.domain.user;
 
 import com.loopers.infrastructure.user.UserJpaRepository;
-import com.loopers.interfaces.api.user.UserV1Dto;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
@@ -42,7 +41,7 @@ class USerServiceIntegrationTest {
         @Test
         void saveUser_whenSignUp() {
             // arrange
-            UserV1Dto.UserRequest request = new UserV1Dto.UserRequest(
+            UserCommand.Create command = new UserCommand.Create(
                     "gdh5866",
                     "F",
                     "1995-06-11",
@@ -50,7 +49,7 @@ class USerServiceIntegrationTest {
             );
 
             // act
-            userService.signUp(request);
+            userService.signUp(command);
 
             // assert
             verify(userJpaRepository, times(1)).save(any(User.class));
@@ -62,27 +61,27 @@ class USerServiceIntegrationTest {
             // arrange
             String sameId = "gdh5866";
 
-            UserV1Dto.UserRequest firstRequest = new UserV1Dto.UserRequest(
+            UserCommand.Create firstCommand = new UserCommand.Create(
                     sameId,
                     "F",
                     "1995-06-11",
                     "donghee@test.com"
             );
 
+            // 사전 저장
+            userService.signUp(firstCommand);
+
             // ID만 같고, 나머지 요소는 다른 두 번째 요청 (ID 중복 시 실패 한다는 것을 더 정확하게 테스트하기 위함)
-            UserV1Dto.UserRequest secondRequest = new UserV1Dto.UserRequest(
+            UserCommand.Create secondCommand = new UserCommand.Create (
                     sameId,
                     "M",
                     "2000-01-01",
                     "another@mail.com"
             );
 
-            // 사전 저장
-            userService.signUp(firstRequest);
-
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                userService.signUp(secondRequest);
+                userService.signUp(secondCommand);
             });
 
             // assert

@@ -1,13 +1,11 @@
 package com.loopers.interfaces.api.user;
 
-import com.loopers.application.user.UserInfo;
+import com.loopers.domain.user.UserCommand;
+import com.loopers.domain.user.UserInfo;
 import com.loopers.domain.user.UserService;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
@@ -16,13 +14,24 @@ public class UserV1Controller implements UserV1ApiSpec {
 
     private final UserService userService;
 
-    @GetMapping("/{userId}")
+    @GetMapping("/me")
     @Override
     public ApiResponse<UserV1Dto.UserResponse> getUser(
-        @PathVariable(value = "userId") String userId
+        @RequestHeader(value = "X-USER-ID") String userId
     ) {
         UserInfo info = userService.getUserInfo(userId);
         UserV1Dto.UserResponse response = UserV1Dto.UserResponse.from(info);
+        return ApiResponse.success(response);
+    }
+
+    @PostMapping("")
+    @Override
+    public ApiResponse<UserV1Dto.UserResponse> signUp(
+            @RequestBody UserV1Dto.UserRequest userRequest
+    ) {
+        UserCommand.Create command = userRequest.toCommand();
+        UserInfo userInfo = userService.signUp(command);
+        UserV1Dto.UserResponse response = UserV1Dto.UserResponse.from(userInfo);
         return ApiResponse.success(response);
     }
 }

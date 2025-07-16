@@ -2,9 +2,7 @@ package com.loopers.interfaces.api.user;
 
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.ApiResponse;
-import com.loopers.interfaces.api.user.UserV1Dto;
 import com.loopers.utils.DatabaseCleanUp;
-import io.swagger.v3.oas.models.PathItem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,9 +15,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
-import java.lang.reflect.ParameterizedType;
-import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -43,6 +38,11 @@ public class UserV1ApiE2ETest {
         this.databaseCleanUp = databaseCleanUp;
     }
 
+    @AfterEach
+    void tearDown() {
+        databaseCleanUp.truncateAllTables();
+    }
+
     @DisplayName("POST /api/v1/users")
     @Nested
     class SignUp {
@@ -54,7 +54,7 @@ public class UserV1ApiE2ETest {
             // arrange
             var request = new UserV1Dto.UserRequest(
                     "gdh5866",        // id
-                    "female",                // gender
+                    "F",                     // gender
                     "1995-06-11",            // birthDate
                     "donghee@shinsegae.com"  // email
             );
@@ -62,7 +62,7 @@ public class UserV1ApiE2ETest {
             HttpEntity<UserV1Dto.UserRequest> httpEntity = new HttpEntity<>(request);
 
             // act
-            ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>> responseType = new ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>>() {};
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>> responseType = new ParameterizedTypeReference<>() {};
             ResponseEntity<ApiResponse<UserV1Dto.UserResponse>> response =
                     testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, httpEntity, responseType);
 
@@ -70,19 +70,34 @@ public class UserV1ApiE2ETest {
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
                     () -> assertThat(response.getBody().data().userId()).isEqualTo("gdh5866"),
+                    () -> assertThat(response.getBody().data().gender()).isEqualTo("F"),
+                    () -> assertThat(response.getBody().data().birthDate()).isEqualTo("1995-06-11"),
                     () -> assertThat(response.getBody().data().email()).isEqualTo("donghee@shinsegae.com")
             );
-
         }
 
         @DisplayName("회원 가입 시에 성별이 없을 경우, 400 Bad Request 응답을 반환한다.")
         @Test
         void returnsBadRequest_whenGenderIsMissing() {
-            // arrange
+            var request = new UserV1Dto.UserRequest(
+                    "gdh5866",        // id
+                    "",                      // gender
+                    "1995-06-11",            // birthDate
+                    "donghee@shinsegae.com"  // email
+            );
+
+            HttpEntity<UserV1Dto.UserRequest> httpEntity = new HttpEntity<>(request);
 
             // act
-            ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>> responseType = new ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>>() {};
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.UserResponse>> response =
+                    testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, httpEntity, responseType);
+
             // assert
+            assertAll(
+                    () -> assertTrue(response.getStatusCode().is4xxClientError()),
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
+            );
 
         }
 
