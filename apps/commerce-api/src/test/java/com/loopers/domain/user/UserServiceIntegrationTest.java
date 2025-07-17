@@ -19,7 +19,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @SpringBootTest
-class USerServiceIntegrationTest {
+class UserServiceIntegrationTest {
     @Autowired
     private UserService userService;
 
