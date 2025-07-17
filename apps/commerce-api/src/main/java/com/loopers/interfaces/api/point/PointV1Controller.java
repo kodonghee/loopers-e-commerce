@@ -29,14 +29,17 @@ public class PointV1Controller implements PointV1ApiSpec {
         return ApiResponse.success(points);
     }
 
-    /*@PostMapping("")
+    @PostMapping("/charge")
     @Override
-    public ApiResponse<UserV1Dto.UserResponse> signUp(
-            @RequestBody UserV1Dto.UserRequest userRequest
+    public ApiResponse<Long> chargePoint(
+            @RequestHeader(value = "X-USER-ID", required = false) String userId,
+            @RequestBody PointV1Dto.PointChargeRequest request
     ) {
-        UserCommand.Create command = userRequest.toCommand();
-        UserInfo userInfo = userService.signUp(command);
-        UserV1Dto.UserResponse response = UserV1Dto.UserResponse.from(userInfo);
-        return ApiResponse.success(response);
-    }*/
+        if (userId == null || userId.isBlank()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "X-USER-ID 헤더가 누락되었습니다.");
+        }
+
+        Long points = userService.chargePoints(userId, request.amount());
+        return ApiResponse.success(points);
+    }
 }

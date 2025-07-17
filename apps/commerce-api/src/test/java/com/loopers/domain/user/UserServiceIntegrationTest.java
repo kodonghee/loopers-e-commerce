@@ -168,4 +168,25 @@ class USerServiceIntegrationTest {
         }
 
     }
+
+    @DisplayName("포인트 충전 통합 테스트")
+    @Nested
+    class PointCharge {
+        @DisplayName("존재하지 않는 유저 ID 로 충전을 시도한 경우, 실패한다.")
+        @Test
+        void failToCharge_whenUserDoesNotExist() {
+            // arrange
+            String unSavedId = "somebody";
+
+            // act
+            CoreException result = assertThrows(CoreException.class, () -> {
+                userService.chargePoints(unSavedId, 1000L);
+            });
+
+            // assert
+            assertThat(result.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
+            assertThat(result.getMessage()).contains("ID");
+        }
+
+    }
 }

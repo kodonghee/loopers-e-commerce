@@ -1,5 +1,7 @@
 package com.loopers.domain.user;
 
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Embeddable;
 
 @Embeddable
@@ -20,6 +22,9 @@ public class Point {
     }
 
     public void add(Long points) {
+        if (points == null || points <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "충전 포인트는 0 이하의 정수가 될 수 없습니다.");
+        }
         this.amount += points;
     }
 

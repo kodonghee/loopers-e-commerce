@@ -90,4 +90,24 @@ class UserTest {
             assertThat(result.getMessage()).contains("생년월일"); // 생년월일 때문에 에러가 발생 했는지 정확하게 확인
         }
     }
+
+    @DisplayName("포인트 충전 단위 테스트")
+    @Nested
+    class PointCharge {
+        @DisplayName("0 이하의 정수로 포인트를 충전 시 실패한다.")
+        @Test
+        void failToCharge_whenChargeAmountIsZeroOrNegative() {
+            // arrange
+            User user = new User("gdh5866", "F", "1995-06-11", "donghee@test.com");
+
+            // act
+            CoreException result = assertThrows(CoreException.class, () -> {
+                user.addPoint(0L);
+            });
+
+            // assert
+            assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
+            assertThat(result.getMessage()).contains("0 이하의 정수");
+        }
+    }
 }

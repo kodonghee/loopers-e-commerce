@@ -2,6 +2,7 @@ package com.loopers.interfaces.api.user;
 
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.ApiResponse;
+import com.loopers.interfaces.api.point.PointV1Dto;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -42,6 +43,7 @@ public class UserV1ApiE2ETest {
     private static final String SIGN_UP_ENDPOINT = "/api/v1/users";
     private static final String INFO_CHECK_ENDPOINT = "/api/v1/users/me";
     private static final String POINT_CHECK_ENDPOINT = "/api/v1/points";
+    private static final String POINT_CHARGE_ENDPOINT = "/api/v1/points/charge";
 
     @AfterEach
     void tearDown() {
@@ -162,7 +164,8 @@ public class UserV1ApiE2ETest {
             HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
 
             // act
-            ParameterizedTypeReference<ApiResponse<Long>> responseType = new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<Long>> responseType = new ParameterizedTypeReference<>() {
+            };
             ResponseEntity<ApiResponse<Long>> response =
                     testRestTemplate.exchange(POINT_CHECK_ENDPOINT, HttpMethod.GET, httpEntity, responseType);
 
@@ -180,7 +183,8 @@ public class UserV1ApiE2ETest {
             HttpEntity<Void> httpEntity = new HttpEntity<>(null);
 
             // act
-            ParameterizedTypeReference<ApiResponse<Long>> responseType = new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<Long>> responseType = new ParameterizedTypeReference<>() {
+            };
             ResponseEntity<ApiResponse<Long>> response =
                     testRestTemplate.exchange(POINT_CHECK_ENDPOINT, HttpMethod.GET, httpEntity, responseType);
 
@@ -188,6 +192,54 @@ public class UserV1ApiE2ETest {
             assertAll(
                     () -> assertTrue(response.getStatusCode().is4xxClientError()),
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
+            );
+        }
+    }
+
+    @DisplayName("POST /api/v1/points/charge")
+    @Nested
+    class PointCharge {
+        @DisplayName("존재하는 유저가 1000원을 충전할 경우, 충전된 보유 총량을 응답으로 반환한다.")
+        @Test
+        void returnsTotalPoints_whenUserAddsPoints1000() {
+            // arrange
+            testRestTemplate.postForEntity(SIGN_UP_ENDPOINT, defaultUserRequest(), Void.class);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("X-USER-ID", USER_ID);
+            PointV1Dto.PointChargeRequest request = new PointV1Dto.PointChargeRequest(1000L);
+            HttpEntity<PointV1Dto.PointChargeRequest> httpEntity = new HttpEntity<>(request, headers);
+
+            // act
+            ParameterizedTypeReference<ApiResponse<Long>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<Long>> response =
+                    testRestTemplate.exchange(POINT_CHARGE_ENDPOINT, HttpMethod.POST, httpEntity, responseType);
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
+                    () -> assertThat(response.getBody().data()).isEqualTo(1000L)
+            );
+        }
+
+        @DisplayName("존재하지 않는 유저로 요청할 경우, 404 Not Found 응답을 반환한다.")
+        @Test
+        void returns404NotFound_whenUserDoesNotExist() {
+            // arrange
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("X-USER-ID", USER_ID);
+            PointV1Dto.PointChargeRequest request = new PointV1Dto.PointChargeRequest(1000L);
+            HttpEntity<PointV1Dto.PointChargeRequest> httpEntity = new HttpEntity<>(request, headers);
+
+            // act
+            ParameterizedTypeReference<ApiResponse<Long>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<Long>> response =
+                    testRestTemplate.exchange(POINT_CHARGE_ENDPOINT, HttpMethod.POST, httpEntity, responseType);
+
+            // assert
+            assertAll(
+                    () -> assertTrue(response.getStatusCode().is4xxClientError()),
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND)
             );
         }
 
