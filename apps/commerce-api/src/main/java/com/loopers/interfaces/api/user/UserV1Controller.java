@@ -4,6 +4,8 @@ import com.loopers.domain.user.UserCommand;
 import com.loopers.domain.user.UserInfo;
 import com.loopers.domain.user.UserService;
 import com.loopers.interfaces.api.ApiResponse;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +22,9 @@ public class UserV1Controller implements UserV1ApiSpec {
         @RequestHeader(value = "X-USER-ID") String userId
     ) {
         UserInfo info = userService.getUserInfo(userId);
+        if (info == null) {
+            throw new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 ID입니다.");
+        }
         UserV1Dto.UserResponse response = UserV1Dto.UserResponse.from(info);
         return ApiResponse.success(response);
     }
