@@ -89,4 +89,32 @@ class USerServiceIntegrationTest {
             assertThat(result.getMessage()).contains("이미 가입된 ID");
         }
     }
+
+    @DisplayName("내 정보 조회 통합 테스트")
+    @Nested
+    class InfoCheck {
+
+        private final String userId = "gdh5866";
+        private final String gender = "F";
+        private final String birthDate = "1995-06-11";
+        private final String email = "donghee@test.com";
+
+        @DisplayName("해당 ID의 회원이 존재할 경우, 회원 정보가 반환된다.")
+        @Test
+        void returnUserInfo_whenUserExists() {
+            // arrange
+            UserCommand.Create command = new UserCommand.Create(userId, gender, birthDate, email);
+            userService.signUp(command);
+
+            // act
+            UserInfo userInfo = userService.getUserInfo(userId);
+
+            // assert
+            assertThat(userInfo).isNotNull();
+            assertThat(userInfo.userId()).isEqualTo(userId);
+            assertThat(userInfo.gender()).isEqualTo(gender);
+            assertThat(userInfo.birthDate()).isEqualTo(birthDate);
+            assertThat(userInfo.email()).isEqualTo(email);
+        }
+    }
 }
