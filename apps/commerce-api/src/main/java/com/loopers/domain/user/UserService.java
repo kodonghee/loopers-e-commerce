@@ -14,9 +14,9 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserInfo getUserInfo(String userId) {
-        User user = userRepository.find(userId)
-                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "[id = " + userId + "] 회원을 찾을 수 없습니다."));
-        return UserInfo.from(user);
+        return userRepository.find(userId)
+                .map(UserInfo::from)
+                .orElse(null);
     }
 
     @Transactional

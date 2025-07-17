@@ -57,7 +57,7 @@ class USerServiceIntegrationTest {
 
         @DisplayName("이미 가입된 ID 로 회원가입 시도 시, 실패한다.")
         @Test
-        void failToSignUp_whenTryToSignUpExistedID() {
+        void failToSignUp_whenTryToSignUpSavedID() {
             // arrange
             String sameId = "gdh5866";
 
@@ -93,16 +93,14 @@ class USerServiceIntegrationTest {
     @DisplayName("내 정보 조회 통합 테스트")
     @Nested
     class InfoCheck {
-
-        private final String userId = "gdh5866";
-        private final String gender = "F";
-        private final String birthDate = "1995-06-11";
-        private final String email = "donghee@test.com";
-
         @DisplayName("해당 ID의 회원이 존재할 경우, 회원 정보가 반환된다.")
         @Test
         void returnUserInfo_whenUserExists() {
             // arrange
+            String userId = "gdh5866";
+            String gender = "F";
+            String birthDate = "1995-06-11";
+            String email = "donghee@test.com";
             UserCommand.Create command = new UserCommand.Create(userId, gender, birthDate, email);
             userService.signUp(command);
 
@@ -116,5 +114,20 @@ class USerServiceIntegrationTest {
             assertThat(userInfo.birthDate()).isEqualTo(birthDate);
             assertThat(userInfo.email()).isEqualTo(email);
         }
+
+
+        @DisplayName("해당 ID의 회원이 존재하지 않을 경우, null이 반환된다.")
+        @Test
+        void returnNull_whenUserDoesNotExist() {
+            // arrange
+            String unSavedId = "somebody";
+
+            // act
+            UserInfo userInfo = userService.getUserInfo(unSavedId);
+
+            // assert
+            assertThat(userInfo).isNull();
+        }
+
     }
 }
