@@ -38,4 +38,11 @@ public class UserService {
         User saved = userRepository.save(user);
         return UserInfo.from(saved);
     }
+
+    @Transactional(readOnly = true)
+    public Long getPoints(String userId) {
+        return userRepository.find(userId)
+                .map(User::getPoint)
+                .orElse(null);
+    }
 }

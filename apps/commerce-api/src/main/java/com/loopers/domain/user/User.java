@@ -3,9 +3,7 @@ package com.loopers.domain.user;
 import com.loopers.domain.BaseEntity;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -20,6 +18,9 @@ public class User extends BaseEntity {
     private String gender;
     private String birthDate;
     private String email;
+
+    @Embedded
+    private Point point = new Point();
 
     protected User() {}
 
@@ -42,13 +43,17 @@ public class User extends BaseEntity {
         return gender;
     }
 
-    public String getBirthDate() {
-        return birthDate;
-    }
+    public String getBirthDate() { return birthDate; }
 
     public String getEmail() {
         return email;
     }
+
+    public Long getPoint() { return point.getAmount(); }
+
+    public void addPoint(Long points) { this.point.add(points); }
+
+    public void deductPoint(Long points) throws IllegalAccessException { this.point.deduct(points); }
 
     private void validateUserId(String userId) {
         if (userId == null || userId.isBlank()) {

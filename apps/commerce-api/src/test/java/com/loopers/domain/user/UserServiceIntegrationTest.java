@@ -130,4 +130,42 @@ class USerServiceIntegrationTest {
         }
 
     }
+
+    @DisplayName("포인트 조회 통합 테스트")
+    @Nested
+    class PointCheck {
+        @DisplayName("해당 ID 의 회원이 존재할 경우, 보유 포인트가 반환된다.")
+        @Test
+        void returnsPointsOnHand_whenUserExists() {
+            // arrange
+            String userId = "gdh5866";
+            String gender = "F";
+            String birthDate = "1995-06-11";
+            String email = "donghee@test.com";
+            UserCommand.Create command = new UserCommand.Create(userId, gender, birthDate, email);
+            userService.signUp(command);
+
+            // act
+            Long point = userService.getPoints(userId);
+
+            // assert
+            assertThat(point).isNotNull();
+            assertThat(point).isEqualTo(0L);
+        }
+
+
+        @DisplayName("해당 ID 의 회원이 존재하지 않을 경우, null 이 반환된다.")
+        @Test
+        void returnNull_whenUserDoesNotExist() {
+            // arrange
+            String unSavedId = "somebody";
+
+            // act
+            Long point = userService.getPoints(unSavedId);
+
+            // assert
+            assertThat(point).isNull();
+        }
+
+    }
 }

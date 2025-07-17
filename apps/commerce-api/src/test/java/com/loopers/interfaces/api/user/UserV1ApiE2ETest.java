@@ -41,6 +41,7 @@ public class UserV1ApiE2ETest {
     private static final String EMAIL = "donghee@test.com";
     private static final String SIGN_UP_ENDPOINT = "/api/v1/users";
     private static final String INFO_CHECK_ENDPOINT = "/api/v1/users/me";
+    private static final String POINT_CHECK_ENDPOINT = "/api/v1/points";
 
     @AfterEach
     void tearDown() {
@@ -142,6 +143,51 @@ public class UserV1ApiE2ETest {
             assertAll(
                     () -> assertTrue(response.getStatusCode().is4xxClientError()),
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND)
+            );
+        }
+
+    }
+
+    @DisplayName("GET /api/v1/points")
+    @Nested
+    class PointCheck {
+        @DisplayName("포인트 조회에 성공할 경우, 보유 포인트를 응답으로 반환한다.")
+        @Test
+        void returnsPoints_whenPointCheckIsSuccessful() {
+            // arrange
+            testRestTemplate.postForEntity(SIGN_UP_ENDPOINT, defaultUserRequest(), Void.class);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("X-USER-ID", USER_ID);
+            HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
+
+            // act
+            ParameterizedTypeReference<ApiResponse<Long>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<Long>> response =
+                    testRestTemplate.exchange(POINT_CHECK_ENDPOINT, HttpMethod.GET, httpEntity, responseType);
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
+                    () -> assertThat(response.getBody().data()).isEqualTo(0L)
+            );
+        }
+
+        @DisplayName("X-USER-ID 헤더가 없을 경우, 400 Bad Request 응답을 반환한다.")
+        @Test
+        void returns404BadRequest_whenXUSERIDDoesNotExist() {
+            // arrange
+            HttpEntity<Void> httpEntity = new HttpEntity<>(null);
+
+            // act
+            ParameterizedTypeReference<ApiResponse<Long>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<Long>> response =
+                    testRestTemplate.exchange(POINT_CHECK_ENDPOINT, HttpMethod.GET, httpEntity, responseType);
+
+            // assert
+            assertAll(
+                    () -> assertTrue(response.getStatusCode().is4xxClientError()),
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
             );
         }
 
