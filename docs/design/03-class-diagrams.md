@@ -1,14 +1,16 @@
 # 클래스 다이어그램
+- User, Order, Like, OrderItem, Product, Brand 클래스는 공통적으로 BaseEntity를 상속받는다.
+- Point, Stock 클래스는 Value Object(VO)로 동작한다.
 ```mermaid
 classDiagram
 class User {
-Long id
-String userId
-Gender gender
-String email
-LocalDate birthDate
-Point point
-}
+        Long id
+        String userId
+        Gender gender
+        String email
+        LocalDate birthDate
+        Point point
+    }
 
     class Point {
         int value
