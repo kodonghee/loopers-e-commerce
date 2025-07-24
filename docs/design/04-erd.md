@@ -20,6 +20,7 @@ erDiagram
         STRING name
         INT stock
         BIGINT brand_id FK
+        INT price
         DATETIME created_at
         DATETIME updated_at
     }
@@ -44,6 +45,7 @@ erDiagram
         INT quantity
         BIGINT product_id FK
         BIGINT order_id FK
+        INT price_at_purchase
         DATETIME created_at
         DATETIME updated_at
     }
@@ -80,6 +82,7 @@ erDiagram
 ### 🔹 LIKE
 - 사용자가 특정 상품에 대해 좋아요를 누른 이력을 저장한다.
 - 사용자와 상품의 조합은 **한 번만** 등록될 수 있다.
+- `LIKE(user_id, product_id)`는 복합 UNIQUE 제약 조건이 적용되어 동일한 사용자가 같은 상품에 중복 좋아요를 할 수 없다.
 ### 🔹 ORDER
 - 주문 마스터 테이블로 하나의 주문은 여러 개의 상품을 포함할 수 있다.
 - 주문 단위로 묶이는 정보를 담고 실제 주문 아이템은 `ORDER_ITEM`에 존재한다.
@@ -88,3 +91,4 @@ erDiagram
 - `quantity`는 주문 수량
 - `product_id`는 어떤 상품이 주문 되었는지를 나타낸다.
 - `order_id`로 상위 주문과 연결 된다.
+- `ORDER_ITEM(order_id, product_id)`는 복합 UNIQUE 제약 조건이 적용되어 중복 주문 항목을 막는다.
