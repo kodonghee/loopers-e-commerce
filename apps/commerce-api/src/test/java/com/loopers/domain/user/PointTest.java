@@ -21,7 +21,7 @@ class PointTest {
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                user.addPoint(0L);
+                user.chargePoint(0L);
             });
 
             // assert

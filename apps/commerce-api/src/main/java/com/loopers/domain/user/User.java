@@ -51,9 +51,9 @@ public class User extends BaseEntity {
 
     public Long getPoint() { return point.getAmount(); }
 
-    public void addPoint(Long points) { this.point.add(points); }
+    public void chargePoint(Long points) { this.point.charge(points); }
 
-    public void deductPoint(Long points) throws IllegalAccessException { this.point.deduct(points); }
+    public void usePoint(Long points) throws IllegalAccessException { this.point.use(points); }
 
     private void validateUserId(String userId) {
         if (userId == null || userId.isBlank()) {

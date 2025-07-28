@@ -50,7 +50,7 @@ public class UserService {
     public Long chargePoints(String userId, Long amount) {
         return userRepository.find(userId)
                 .map(user -> {
-                    user.addPoint(amount);
+                    user.chargePoint(amount);
                     return user.getPoint();
                 })
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "해당 ID의 회원이 없습니다."));
