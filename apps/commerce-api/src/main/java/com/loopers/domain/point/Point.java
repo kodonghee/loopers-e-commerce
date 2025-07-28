@@ -1,4 +1,4 @@
-package com.loopers.domain.user;
+package com.loopers.domain.point;
 
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -9,7 +9,7 @@ public class Point {
 
     private final Long pointValue;
 
-    protected Point() {
+    public Point() {
         this.pointValue = 0L;
     }
 
@@ -18,9 +18,6 @@ public class Point {
         this.pointValue = pointValue;
     }
 
-    public Long getPointValue() {
-        return pointValue;
-    }
     public Point charge(Long amount) {
         validateChargeAmount(amount);
         return new Point(this.pointValue + amount);
@@ -29,6 +26,10 @@ public class Point {
     public Point use(Long amount) {
         validateUseAmount(amount);
         return new Point(this.pointValue - amount);
+    }
+
+    public Long getPointValue() {
+        return pointValue;
     }
 
     // =============================

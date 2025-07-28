@@ -14,7 +14,7 @@ public class PointV1Controller implements PointV1ApiSpec {
 
     private final UserService userService;
 
-    @GetMapping("")
+    @GetMapping
     @Override
     public ApiResponse<Long> getPoints(
         @RequestHeader(value = "X-USER-ID", required = false) String userId
