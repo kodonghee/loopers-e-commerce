@@ -16,7 +16,7 @@ public class UserService {
     public UserInfo getUserInfo(String userId) {
         return userRepository.find(userId)
                 .map(UserInfo::from)
-                .orElse(null);
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "해당 ID의 회원이 없습니다."));
     }
 
     @Transactional

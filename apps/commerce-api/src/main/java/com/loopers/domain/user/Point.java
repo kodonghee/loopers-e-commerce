@@ -45,13 +45,19 @@ public class Point {
     }
 
     private void validateChargeAmount(Long value) {
-        if (value == null || value <= 0) {
+        if (value == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "충전할 포인트 값이 null입니다.");
+        }
+        if (value <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "충전할 포인트는 0보다 커야 합니다.");
         }
     }
 
     private void validateUseAmount(Long value) {
-        if (value == null || value <= 0) {
+        if (value == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "사용할 포인트 값이 null입니다.");
+        }
+        if (value <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "사용할 포인트는 0보다 커야 합니다.");
         }
         if (this.pointValue < value) {

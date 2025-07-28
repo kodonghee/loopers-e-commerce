@@ -116,17 +116,19 @@ class UserServiceIntegrationTest {
         }
 
 
-        @DisplayName("해당 ID의 회원이 존재하지 않을 경우, null이 반환된다.")
+        @DisplayName("해당 ID의 회원이 존재하지 않을 경우, 예외가 발생한다.")
         @Test
         void returnNull_whenUserDoesNotExist() {
             // arrange
             String unSavedId = "somebody";
 
-            // act
-            UserInfo userInfo = userService.getUserInfo(unSavedId);
+            // acT
+            CoreException result = assertThrows(CoreException.class, () -> {
+                userService.getUserInfo(unSavedId);
+            });
 
             // assert
-            assertThat(userInfo).isNull();
+            assertThat(result.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
         }
 
     }
