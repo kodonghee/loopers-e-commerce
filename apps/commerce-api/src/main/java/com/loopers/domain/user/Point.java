@@ -7,31 +7,55 @@ import jakarta.persistence.Embeddable;
 @Embeddable
 public class Point {
 
-    private Long amount;
+    private final Long pointValue;
 
     protected Point() {
-        this.amount = 0L;
+        this.pointValue = 0L;
     }
 
-    public Point(Long amount) {
-        this.amount = amount;
+    public Point(Long pointValue) {
+        validateInitialValue(pointValue);
+        this.pointValue = pointValue;
     }
 
-    public Long getAmount() {
-        return amount;
+    public Long getPointValue() {
+        return pointValue;
+    }
+    public Point charge(Long amount) {
+        validateChargeAmount(amount);
+        return new Point(this.pointValue + amount);
     }
 
-    public void charge(Long points) {
-        if (points == null || points <= 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "충전 포인트는 0 이하의 정수가 될 수 없습니다.");
+    public Point use(Long amount) {
+        validateUseAmount(amount);
+        return new Point(this.pointValue - amount);
+    }
+
+    // =============================
+    // 🔒 Validation methods
+    // =============================
+
+    private void validateInitialValue(Long value) {
+        if (value == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "포인트는 빈 값으로 생성될 수 없습니다.");
         }
-        this.amount += points;
+        if (value < 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "포인트는 음수로 생성될 수 없습니다.");
+        }
     }
 
-    public void use(Long points) throws IllegalAccessException {
-        if (this.amount < points) {
-            throw new IllegalAccessException("포인트가 부족합니다.");
+    private void validateChargeAmount(Long value) {
+        if (value == null || value <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "충전할 포인트는 0보다 커야 합니다.");
         }
-        this.amount -= points;
+    }
+
+    private void validateUseAmount(Long value) {
+        if (value == null || value <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "사용할 포인트는 0보다 커야 합니다.");
+        }
+        if (this.pointValue < value) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "포인트가 부족합니다.");
+        }
     }
 }

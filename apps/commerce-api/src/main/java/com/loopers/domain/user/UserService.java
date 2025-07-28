@@ -46,7 +46,7 @@ public class UserService {
                 .orElse(null);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Long chargePoints(String userId, Long amount) {
         return userRepository.find(userId)
                 .map(user -> {

@@ -49,11 +49,15 @@ public class User extends BaseEntity {
         return email;
     }
 
-    public Long getPoint() { return point.getAmount(); }
+    public Long getPoint() { return point.getPointValue(); }
 
-    public void chargePoint(Long points) { this.point.charge(points); }
+    public void chargePoint(Long points) {
+        this.point = this.point.charge(points);
+    }
 
-    public void usePoint(Long points) throws IllegalAccessException { this.point.use(points); }
+    public void usePoint(Long points) throws IllegalAccessException {
+        this.point = this.point.use(points);
+    }
 
     private void validateUserId(String userId) {
         if (userId == null || userId.isBlank()) {

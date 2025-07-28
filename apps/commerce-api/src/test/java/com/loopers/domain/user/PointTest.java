@@ -26,7 +26,7 @@ class PointTest {
 
             // assert
             assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
-            assertThat(result.getMessage()).contains("0 이하의 정수");
+            assertThat(result.getMessage()).contains("충전할 포인트는 0보다 커야 합니다.");
         }
     }
 }
