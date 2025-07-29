@@ -13,7 +13,7 @@ public class UserService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public UserInfo getUserInfo(String userId) {
+    public UserInfo getUserInfo(UserId userId) {
         return userRepository.find(userId)
                 .map(UserInfo::from)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "해당 ID의 회원이 없습니다."));
@@ -40,14 +40,14 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Long getPoints(String userId) {
+    public Long getPoints(UserId userId) {
         return userRepository.find(userId)
                 .map(User::getPoint)
                 .orElse(null);
     }
 
     @Transactional
-    public Long chargePoints(String userId, Long amount) {
+    public Long chargePoints(UserId userId, Long amount) {
         return userRepository.find(userId)
                 .map(user -> {
                     user.chargePoint(amount);

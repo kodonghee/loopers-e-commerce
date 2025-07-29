@@ -105,7 +105,7 @@ class UserServiceIntegrationTest {
             userService.signUp(command);
 
             // act
-            UserInfo userInfo = userService.getUserInfo(userId);
+            UserInfo userInfo = userService.getUserInfo(new UserId(userId));
 
             // assert
             assertThat(userInfo).isNotNull();
@@ -124,7 +124,7 @@ class UserServiceIntegrationTest {
 
             // acT
             CoreException result = assertThrows(CoreException.class, () -> {
-                userService.getUserInfo(unSavedId);
+                userService.getUserInfo(new UserId(unSavedId));
             });
 
             // assert
@@ -148,7 +148,7 @@ class UserServiceIntegrationTest {
             userService.signUp(command);
 
             // act
-            Long point = userService.getPoints(userId);
+            Long point = userService.getPoints(new UserId(userId));
 
             // assert
             assertThat(point).isNotNull();
@@ -163,7 +163,7 @@ class UserServiceIntegrationTest {
             String unSavedId = "somebody";
 
             // act
-            Long point = userService.getPoints(unSavedId);
+            Long point = userService.getPoints(new UserId(unSavedId));
 
             // assert
             assertThat(point).isNull();
@@ -182,7 +182,7 @@ class UserServiceIntegrationTest {
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                userService.chargePoints(unSavedId, 1000L);
+                userService.chargePoints(new UserId(unSavedId), 1000L);
             });
 
             // assert

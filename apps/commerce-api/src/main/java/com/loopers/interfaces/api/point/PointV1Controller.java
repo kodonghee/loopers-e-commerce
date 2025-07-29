@@ -1,7 +1,9 @@
 package com.loopers.interfaces.api.point;
 
+import com.loopers.domain.user.UserId;
 import com.loopers.domain.user.UserService;
 import com.loopers.interfaces.api.ApiResponse;
+import com.loopers.support.annotation.UserIdParam;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -17,11 +19,8 @@ public class PointV1Controller implements PointV1ApiSpec {
     @GetMapping
     @Override
     public ApiResponse<Long> getPoints(
-        @RequestHeader(value = "X-USER-ID", required = false) String userId
+            @UserIdParam UserId userId
     ) {
-        if (userId == null || userId.isBlank()) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "X-USER-ID 헤더가 누락되었습니다.");
-        }
         Long points = userService.getPoints(userId);
         if (points == null) {
             throw new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 ID입니다.");
@@ -32,13 +31,9 @@ public class PointV1Controller implements PointV1ApiSpec {
     @PostMapping("/charge")
     @Override
     public ApiResponse<Long> chargePoint(
-            @RequestHeader(value = "X-USER-ID", required = false) String userId,
+            @UserIdParam UserId userId,
             @RequestBody PointV1Dto.PointChargeRequest request
     ) {
-        if (userId == null || userId.isBlank()) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "X-USER-ID 헤더가 누락되었습니다.");
-        }
-
         Long points = userService.chargePoints(userId, request.amount());
         return ApiResponse.success(points);
     }

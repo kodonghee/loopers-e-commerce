@@ -1,11 +1,11 @@
 package com.loopers.interfaces.api.user;
 
 import com.loopers.domain.user.UserCommand;
+import com.loopers.domain.user.UserId;
 import com.loopers.domain.user.UserInfo;
 import com.loopers.domain.user.UserService;
 import com.loopers.interfaces.api.ApiResponse;
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
+import com.loopers.support.annotation.UserIdParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +19,7 @@ public class UserV1Controller implements UserV1ApiSpec {
     @GetMapping("/me")
     @Override
     public ApiResponse<UserV1Dto.UserResponse> getUser(
-        @RequestHeader(value = "X-USER-ID") String userId
+        @UserIdParam UserId userId
     ) {
         UserInfo info = userService.getUserInfo(userId);
 
