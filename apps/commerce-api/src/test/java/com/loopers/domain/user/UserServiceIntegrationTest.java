@@ -23,6 +23,9 @@ class UserServiceIntegrationTest {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @MockitoSpyBean
     private UserJpaRepository userJpaRepository;
 
@@ -101,8 +104,9 @@ class UserServiceIntegrationTest {
             String gender = "F";
             String birthDate = "1995-06-11";
             String email = "donghee@test.com";
-            UserCommand.Create command = new UserCommand.Create(userId, gender, birthDate, email);
-            userService.signUp(command);
+
+            User user = new User(userId, gender, birthDate, email);
+            userRepository.save(user);
 
             // act
             UserInfo userInfo = userService.getUserInfo(new UserId(userId));
@@ -144,8 +148,8 @@ class UserServiceIntegrationTest {
             String gender = "F";
             String birthDate = "1995-06-11";
             String email = "donghee@test.com";
-            UserCommand.Create command = new UserCommand.Create(userId, gender, birthDate, email);
-            userService.signUp(command);
+            User user = new User(userId, gender, birthDate, email);
+            userRepository.save(user);
 
             // act
             Long point = userService.getPoints(new UserId(userId));
