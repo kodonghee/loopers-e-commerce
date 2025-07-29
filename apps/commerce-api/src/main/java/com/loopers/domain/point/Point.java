@@ -32,6 +32,23 @@ public class Point {
         return pointValue;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Point otherPoint)) return false;
+        return pointValue.equals(otherPoint.pointValue);
+    }
+
+    @Override
+    public int hashCode() {
+        return pointValue.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return pointValue.toString();
+    }
+
     // =============================
     // 🔒 Validation methods
     // =============================
