@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,8 +46,9 @@ class UserServiceIntegrationTest {
         @Test
         void saveUser_whenSignUp() {
             // arrange
+            String userId = "gdh5866";
             UserCommand.Create command = new UserCommand.Create(
-                    "gdh5866",
+                    userId,
                     "F",
                     "1995-06-11",
                     "donghee@test.com"
@@ -56,6 +59,10 @@ class UserServiceIntegrationTest {
 
             // assert
             verify(userJpaRepository, times(1)).save(any(User.class));
+
+            Optional<User> savedUser = userJpaRepository.findByUserId(userId);
+            assertThat(savedUser).isPresent();
+            assertThat(savedUser.get().getEmail()).isEqualTo("donghee@test.com");
         }
 
         @DisplayName("이미 가입된 ID 로 회원가입 시도 시, 실패한다.")

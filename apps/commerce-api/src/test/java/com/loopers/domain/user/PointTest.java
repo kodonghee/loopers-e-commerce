@@ -28,5 +28,18 @@ class PointTest {
             assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
             assertThat(result.getMessage()).contains("충전할 포인트는 0보다 커야 합니다.");
         }
+
+        @DisplayName("정상적으로 포인트를 충전하면, 충전된 이후 포인트가 올바르게 반영된다.")
+        @Test
+        void succeedToCharge_whenChargeAmountIsValid() {
+            // arrange
+            User user = new User("gdh5866", "F", "1995-06-11", "donghee@test.com");
+
+            // act
+            user.chargePoint(300L);
+
+            // assert
+            assertThat(user.getPoint()).isEqualTo(300L);
+        }
     }
 }
