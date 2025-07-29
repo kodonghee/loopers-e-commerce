@@ -1,12 +1,13 @@
 package com.loopers.interfaces.api.user;
 
+import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.UserCommand;
 import com.loopers.domain.user.UserInfo;
 
 public class UserV1Dto {
     public record UserRequest(String userId, String gender, String birthDate, String email) {
         public UserCommand.Create toCommand (){
-            return new UserCommand.Create(userId, gender, birthDate, email);
+            return new UserCommand.Create(userId, Gender.from(gender), birthDate, email);
         }
     }
     public record UserResponse(String userId, String gender, String birthDate, String email) {

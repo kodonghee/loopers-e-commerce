@@ -49,7 +49,7 @@ class UserServiceIntegrationTest {
             String userId = "gdh5866";
             UserCommand.Create command = new UserCommand.Create(
                     userId,
-                    "F",
+                    Gender.F,
                     "1995-06-11",
                     "donghee@test.com"
             );
@@ -73,7 +73,7 @@ class UserServiceIntegrationTest {
 
             UserCommand.Create firstCommand = new UserCommand.Create(
                     sameId,
-                    "F",
+                    Gender.F,
                     "1995-06-11",
                     "donghee@test.com"
             );
@@ -84,7 +84,7 @@ class UserServiceIntegrationTest {
             // ID만 같고, 나머지 요소는 다른 두 번째 요청 (ID 중복 시 실패 한다는 것을 더 정확하게 테스트하기 위함)
             UserCommand.Create secondCommand = new UserCommand.Create (
                     sameId,
-                    "M",
+                    Gender.M,
                     "2000-01-01",
                     "another@mail.com"
             );
@@ -108,7 +108,7 @@ class UserServiceIntegrationTest {
         void returnUserInfo_whenUserExists() {
             // arrange
             String userId = "gdh5866";
-            String gender = "F";
+            Gender gender = Gender.F;
             String birthDate = "1995-06-11";
             String email = "donghee@test.com";
 
@@ -121,7 +121,7 @@ class UserServiceIntegrationTest {
             // assert
             assertThat(userInfo).isNotNull();
             assertThat(userInfo.userId()).isEqualTo(userId);
-            assertThat(userInfo.gender()).isEqualTo(gender);
+            assertThat(userInfo.gender()).isEqualTo(gender.name());
             assertThat(userInfo.birthDate()).isEqualTo(birthDate);
             assertThat(userInfo.email()).isEqualTo(email);
         }
@@ -152,10 +152,9 @@ class UserServiceIntegrationTest {
         void returnsPointsOnHand_whenUserExists() {
             // arrange
             String userId = "gdh5866";
-            String gender = "F";
             String birthDate = "1995-06-11";
             String email = "donghee@test.com";
-            User user = new User(userId, gender, birthDate, email);
+            User user = new User(userId, Gender.F, birthDate, email);
             userRepository.save(user);
 
             // act

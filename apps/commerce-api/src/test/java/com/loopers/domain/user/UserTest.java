@@ -20,13 +20,12 @@ class UserTest {
         void failToCreateUser_whenIDNotSuitable() {
             // arrange
             String userId = "고동희고동희";
-            String gender = "F";
             String birthDate = "1995-06-11";
             String email = "qmdlfakrhf@naver.com";
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                new User(userId, gender, birthDate, email);
+                new User(userId, Gender.F, birthDate, email);
             });
 
             // assert
@@ -45,11 +44,10 @@ class UserTest {
         })
         @DisplayName("유효한 ID로 User 객체 생성 성공 (경계값 포함)")
         void createUserWithValidId(String validId) {
-            String gender = "F";
             String birthDate = "1995-06-11";
             String email = "test@example.com";
 
-            assertDoesNotThrow(() -> new User(validId, gender, birthDate, email));
+            assertDoesNotThrow(() -> new User(validId, Gender.F, birthDate, email));
         }
 
         @DisplayName("이메일이 xx@yy.zz 형식에 맞지 않으면, User 객체 생성에 실패 한다.")
@@ -57,13 +55,12 @@ class UserTest {
         void failToCreateUser_whenEmailNotSuitable() {
             // arrange
             String userId = "gdh5866";
-            String gender = "F";
             String birthDate = "1995-06-11";
             String email = "trashtrash";
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                new User(userId, gender, birthDate, email);
+                new User(userId, Gender.F, birthDate, email);
             });
 
             // assert
@@ -76,13 +73,12 @@ class UserTest {
         void failToCreateUser_whenBirthDateNotSuitable() {
             // arrange
             String userId = "gdh5866";
-            String gender = "F";
             String birthDate = "19950611";
             String email = "test@email.com";
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                new User(userId, gender, birthDate, email);
+                new User(userId, Gender.F, birthDate, email);
             });
 
             // assert

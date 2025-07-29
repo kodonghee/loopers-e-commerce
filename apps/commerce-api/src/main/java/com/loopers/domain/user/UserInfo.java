@@ -5,7 +5,7 @@ public record UserInfo(String userId, String gender, String birthDate, String em
     public static UserInfo from(User user) {
         return new UserInfo(
                 user.getUserId(),
-                user.getGender(),
+                user.getGender().name(),
                 user.getBirthDate(),
                 user.getEmail()
         );

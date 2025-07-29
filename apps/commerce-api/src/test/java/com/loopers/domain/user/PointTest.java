@@ -17,7 +17,7 @@ class PointTest {
         @Test
         void failToCharge_whenChargeAmountIsZeroOrNegative() {
             // arrange
-            User user = new User("gdh5866", "F", "1995-06-11", "donghee@test.com");
+            User user = new User("gdh5866", Gender.F, "1995-06-11", "donghee@test.com");
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
@@ -33,7 +33,7 @@ class PointTest {
         @Test
         void succeedToCharge_whenChargeAmountIsValid() {
             // arrange
-            User user = new User("gdh5866", "F", "1995-06-11", "donghee@test.com");
+            User user = new User("gdh5866", Gender.F, "1995-06-11", "donghee@test.com");
 
             // act
             user.chargePoint(300L);

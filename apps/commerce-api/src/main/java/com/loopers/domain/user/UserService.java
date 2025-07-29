@@ -25,9 +25,6 @@ public class UserService {
             throw new CoreException(ErrorType.CONFLICT, "이미 가입된 ID 입니다.");
         }
 
-        if (command.gender() == null || command.gender().isBlank()) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "성별이 없습니다.");
-        }
         User user = new User(
                 command.userId(),
                 command.gender(),
