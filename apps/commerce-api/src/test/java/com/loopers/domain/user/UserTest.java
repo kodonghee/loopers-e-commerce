@@ -69,7 +69,17 @@ class UserTest {
         }
 
         @DisplayName("생년월일이 yyyy-MM-dd 형식에 맞지 않으면, User 객체 생성에 실패 한다.")
-        @Test
+        @ParameterizedTest
+        @ValueSource(strings = {
+                "abcd-ef-gh",   // 문자 포함
+                "1995/06/11",   // 구분자 /
+                "1995.06.11",   // 구분자 .
+                "1995-2-3",     // 자리수 부족
+                "1995-02-30",   // 잘못된 날짜
+                "19950611",     // 구분자 없음
+                "95-06-11",     // 연도 자리수 부족
+                ""              // 빈 문자열
+        })
         void failToCreateUser_whenBirthDateNotSuitable() {
             // arrange
             String userId = "gdh5866";
