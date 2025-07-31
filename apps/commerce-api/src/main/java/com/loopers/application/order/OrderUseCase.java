@@ -5,6 +5,7 @@ import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderRepository;
 import com.loopers.domain.order.service.OrderService;
+import com.loopers.domain.user.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +35,7 @@ public class OrderUseCase {
     }
 
     @Transactional(readOnly = true)
-    public List<OrderInfo> getOrderList(String userId) {
+    public List<OrderInfo> getOrderList(UserId userId) {
         return orderRepository.findAllByUserId(userId).stream()
                 .map(this::toInfo)
                 .toList();

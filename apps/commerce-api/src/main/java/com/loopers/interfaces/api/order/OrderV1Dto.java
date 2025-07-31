@@ -27,4 +27,14 @@ public class OrderV1Dto {
             return new OrderItemResponse(info.productId(), info.quantity(), info.price());
         }
     }
+
+    public class OrderItemRequestList {
+        private List<OrderItemRequest> items;
+
+        public List<OrderItemRequest> getItems() {
+            return items;
+        }
+
+        public record OrderItemRequest(Long productId, int quantity, int price) {}
+    }
 }

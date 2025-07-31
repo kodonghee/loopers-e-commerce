@@ -2,6 +2,8 @@ package com.loopers.interfaces.api.like;
 
 import com.loopers.application.like.LikeUseCase;
 import com.loopers.application.like.LikeInfo;
+import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserId;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +20,7 @@ public class LikeV1Controller implements LikeV1ApiSpec {
     @PostMapping("/{productId}")
     @Override
     public ApiResponse<Object> likeProduct(
-            @RequestHeader("X-USER-ID") String userId,
+            @RequestHeader("X-USER-ID") UserId userId,
             @PathVariable("productId") Long productId
     ) {
         likeUseCase.likeProduct(userId, productId);
@@ -28,7 +30,7 @@ public class LikeV1Controller implements LikeV1ApiSpec {
     @DeleteMapping("/{productId}")
     @Override
     public ApiResponse<Object> cancelLikeProduct(
-            @RequestHeader("X-USER-ID") String userId,
+            @RequestHeader("X-USER-ID") UserId userId,
             @PathVariable("productId") Long productId
     ) {
         likeUseCase.cancelLikeProduct(userId, productId);
@@ -38,7 +40,7 @@ public class LikeV1Controller implements LikeV1ApiSpec {
     @GetMapping
     @Override
     public ApiResponse<List<LikeV1Dto.LikeProductResponse>> getLikedProducts(
-            @RequestHeader("X-USER-ID") String userId
+            @RequestHeader("X-USER-ID") UserId userId
     ) {
         List<LikeInfo> likedProducts = likeUseCase.getLikedProducts(userId);
         List<LikeV1Dto.LikeProductResponse> response = likedProducts.stream()

@@ -4,7 +4,7 @@ import java.util.List;
 
 public record OrderCommand(
         String userId,
-        List<OrderItemRequest> items
+        List<OrderItem> items
 ) {
-    public record OrderItemRequest(Long productId, int quantity, int price) {}
+    public record OrderItem(Long productId, int quantity, int price) {}
 }

@@ -24,12 +24,12 @@ public class OrderService {
 
         for (OrderItem item : items) {
             if (!stockValidator.apply(item.getProductId(), item.getQuantity())) {
-                throw new CoreException(ErrorType.OUT_OF_STOCK);
+                throw new CoreException(ErrorType.BAD_REQUEST);
             }
         }
 
         if (!pointValidator.apply(userId, totalAmount)) {
-            throw new CoreException(ErrorType.NOT_ENOUGH_POINT);
+            throw new CoreException(ErrorType.BAD_REQUEST);
         }
 
         return new Order(userId, items);
