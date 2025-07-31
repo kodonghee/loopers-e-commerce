@@ -1,6 +1,7 @@
 package com.loopers.interfaces.api.product;
 
 import com.loopers.application.product.ProductInfo;
+import com.loopers.domain.product.ProductSortType;
 
 import java.math.BigDecimal;
 
@@ -24,5 +25,12 @@ public class ProductV1Dto {
             );
         }
     }
+
+    public record ProductListRequest(
+            Long brandId,
+            ProductSortType sort,
+            Integer page,
+            Integer size
+    ) {}
 
 }

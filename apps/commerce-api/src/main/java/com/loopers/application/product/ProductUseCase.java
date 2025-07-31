@@ -1,13 +1,11 @@
 package com.loopers.application.product;
 
-import com.loopers.application.brand.BrandReader;
-import com.loopers.application.like.LikeCountReader;
+import com.loopers.domain.brand.BrandReader;
 import com.loopers.domain.product.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -32,27 +30,12 @@ public class ProductUseCase {
     }
 
     @Transactional(readOnly = true)
-    public List<ProductInfo> getProductList(ProductSortType sortType) {
-        List<Product> products = productRepository.findAll();
+    public List<ProductInfo> getProductList(ProductSearchCondition condition) {
+        List<Product> products = productRepository.findAllByCondition(condition);
 
-        return switch (sortType) {
-            case LATEST -> products.stream()
-                    .sorted(Comparator.comparing(Product::getCreatedAt).reversed())
-                    .map(this::toInfo)
-                    .toList();
-
-            case PRICE_ASC -> products.stream()
-                    .sorted(Comparator.comparing(p -> p.getPrice().getAmount()))
-                    .map(this::toInfo)
-                    .toList();
-
-            case LIKES_DESC -> products.stream()
-                    .sorted(Comparator.comparing((Product p) ->
-                                    likeCountReader.getLikeCountByProductId(p.getId()))
-                            .reversed())
-                    .map(this::toInfo)
-                    .toList();
-        };
+        return products.stream()
+                .map(this::toInfo)
+                .toList();
     }
 
     @Transactional(readOnly = true)

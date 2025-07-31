@@ -8,4 +8,5 @@ public interface ProductRepository {
     Optional<Product> findById(Long id);
     void save(Product product);
     List<Product> findAll();
+    List<Product> findAllByCondition(ProductSearchCondition condition);
 }

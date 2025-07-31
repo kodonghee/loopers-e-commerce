@@ -2,6 +2,7 @@ package com.loopers.interfaces.api.product;
 
 import com.loopers.application.product.ProductInfo;
 import com.loopers.application.product.ProductUseCase;
+import com.loopers.domain.product.ProductSearchCondition;
 import com.loopers.domain.product.ProductSortType;
 import com.loopers.interfaces.api.ApiResponse;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,9 +21,15 @@ public class ProductV1Controller implements ProductV1ApiSpec {
     @GetMapping
     @Override
     public ApiResponse<List<ProductV1Dto.ProductResponse>> getProductList(
-            @RequestParam(name = "sort", defaultValue = "latest") ProductSortType sortType
+            @RequestParam(required = false) Long brandId,
+            @RequestParam(defaultValue = "LATEST") ProductSortType sortType,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
     ) {
-        List<ProductInfo> products = productUseCase.getProductList(sortType);
+        ProductSearchCondition condition = new ProductSearchCondition(
+                brandId, sortType, page, size
+        );
+        List<ProductInfo> products = productUseCase.getProductList(condition);
         List<ProductV1Dto.ProductResponse> response = products.stream()
                 .map(ProductV1Dto.ProductResponse::from)
                 .toList();

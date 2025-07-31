@@ -1,6 +1,6 @@
 package com.loopers.interfaces.api.brand;
 
-import com.loopers.application.brand.BrandReader;
+import com.loopers.domain.brand.BrandReader;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

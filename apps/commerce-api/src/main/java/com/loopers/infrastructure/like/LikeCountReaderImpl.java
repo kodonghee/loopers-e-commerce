@@ -1,6 +1,6 @@
-package com.loopers.infrastructure.product;
+package com.loopers.infrastructure.like;
 
-import com.loopers.application.like.LikeCountReader;
+import com.loopers.domain.like.LikeCountReader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
