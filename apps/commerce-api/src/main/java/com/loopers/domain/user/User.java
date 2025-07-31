@@ -21,9 +21,6 @@ public class User extends BaseEntity {
     private String birthDate;
     private String email;
 
-    @Embedded
-    private Point point = new Point();
-
     protected User() {}
 
     public User(String userId, Gender gender, String birthDate, String email) {
@@ -48,16 +45,6 @@ public class User extends BaseEntity {
 
     public String getEmail() {
         return email;
-    }
-
-    public Long getPoint() { return point.getPointValue(); }
-
-    public void chargePoint(Long points) {
-        this.point = this.point.charge(points);
-    }
-
-    public void usePoint(Long points) throws IllegalAccessException {
-        this.point = this.point.use(points);
     }
 
     private void validateUserId(String userId) {

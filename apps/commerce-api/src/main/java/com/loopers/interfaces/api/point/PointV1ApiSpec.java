@@ -19,7 +19,7 @@ public interface PointV1ApiSpec {
         description = "X-USER-ID 헤더를 통해 포인트를 조회합니다."
     )
     @GetMapping("")
-    ApiResponse<Long> getPoints(
+    ApiResponse<PointV1Dto.PointResponse> getPoints(
             @Schema(name = "X-USER-ID", description = "조회할 회원의 ID", example = "gdh5866")
             @UserIdParam UserId userId
     );
@@ -29,7 +29,7 @@ public interface PointV1ApiSpec {
             description = "X-USER-ID 헤더와 충전할 포인트 값을 통해 포인트를 충전합니다."
     )
     @PostMapping("/charge")
-    ApiResponse<Long> chargePoint(
+    ApiResponse<PointV1Dto.PointResponse> chargePoint(
             @UserIdParam UserId userId,
             @RequestBody PointV1Dto.PointChargeRequest request
     );

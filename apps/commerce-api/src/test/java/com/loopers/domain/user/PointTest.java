@@ -1,5 +1,6 @@
 package com.loopers.domain.user;
 
+import com.loopers.domain.point.Point;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
@@ -18,10 +19,11 @@ class PointTest {
         void failToCharge_whenChargeAmountIsZeroOrNegative() {
             // arrange
             User user = new User("gdh5866", Gender.F, "1995-06-11", "donghee@test.com");
+            Point point = new Point(user.getUserId(), 0L);
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                user.chargePoint(0L);
+                point.charge(0L);
             });
 
             // assert
@@ -34,12 +36,13 @@ class PointTest {
         void succeedToCharge_whenChargeAmountIsValid() {
             // arrange
             User user = new User("gdh5866", Gender.F, "1995-06-11", "donghee@test.com");
+            Point point = new Point(user.getUserId(), 0L);
 
             // act
-            user.chargePoint(300L);
+            point.charge(300L);
 
             // assert
-            assertThat(user.getPoint()).isEqualTo(300L);
+            assertThat(point.getPointValue()).isEqualTo(300L);
         }
     }
 }

@@ -1,5 +1,9 @@
-package com.loopers.domain.user;
+package com.loopers.application.user;
 
+import com.loopers.domain.user.Gender;
+import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserId;
+import com.loopers.domain.user.UserRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -21,9 +25,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @SpringBootTest
-class UserServiceIntegrationTest {
+class UserUseCaseIntegrationTest {
     @Autowired
-    private UserService userService;
+    private UserUseCase userUseCase;
 
     @Autowired
     private UserRepository userRepository;
@@ -55,7 +59,7 @@ class UserServiceIntegrationTest {
             );
 
             // act
-            userService.signUp(command);
+            userUseCase.signUp(command);
 
             // assert
             verify(userJpaRepository, times(1)).save(any(User.class));
@@ -79,7 +83,7 @@ class UserServiceIntegrationTest {
             );
 
             // 사전 저장
-            userService.signUp(firstCommand);
+            userUseCase.signUp(firstCommand);
 
             // ID만 같고, 나머지 요소는 다른 두 번째 요청 (ID 중복 시 실패 한다는 것을 더 정확하게 테스트하기 위함)
             UserCommand.Create secondCommand = new UserCommand.Create (
@@ -91,7 +95,7 @@ class UserServiceIntegrationTest {
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                userService.signUp(secondCommand);
+                userUseCase.signUp(secondCommand);
             });
 
             // assert
@@ -116,7 +120,7 @@ class UserServiceIntegrationTest {
             userRepository.save(user);
 
             // act
-            UserInfo userInfo = userService.getUserInfo(new UserId(userId));
+            UserInfo userInfo = userUseCase.getUserInfo(new UserId(userId));
 
             // assert
             assertThat(userInfo).isNotNull();
@@ -135,69 +139,11 @@ class UserServiceIntegrationTest {
 
             // acT
             CoreException result = assertThrows(CoreException.class, () -> {
-                userService.getUserInfo(new UserId(unSavedId));
+                userUseCase.getUserInfo(new UserId(unSavedId));
             });
 
             // assert
             assertThat(result.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
-        }
-
-    }
-
-    @DisplayName("포인트 조회 통합 테스트")
-    @Nested
-    class PointCheck {
-        @DisplayName("해당 ID 의 회원이 존재할 경우, 보유 포인트가 반환된다.")
-        @Test
-        void returnsPointsOnHand_whenUserExists() {
-            // arrange
-            String userId = "gdh5866";
-            String birthDate = "1995-06-11";
-            String email = "donghee@test.com";
-            User user = new User(userId, Gender.F, birthDate, email);
-            userRepository.save(user);
-
-            // act
-            Long point = userService.getPoints(new UserId(userId));
-
-            // assert
-            assertThat(point).isNotNull();
-            assertThat(point).isEqualTo(0L);
-        }
-
-
-        @DisplayName("해당 ID 의 회원이 존재하지 않을 경우, null 이 반환된다.")
-        @Test
-        void returnNull_whenUserDoesNotExist() {
-            // arrange
-            String unSavedId = "somebody";
-
-            // act
-            Long point = userService.getPoints(new UserId(unSavedId));
-
-            // assert
-            assertThat(point).isNull();
-        }
-
-    }
-
-    @DisplayName("포인트 충전 통합 테스트")
-    @Nested
-    class PointCharge {
-        @DisplayName("존재하지 않는 유저 ID 로 충전을 시도한 경우, 실패한다.")
-        @Test
-        void failToCharge_whenUserDoesNotExist() {
-            // arrange
-            String unSavedId = "somebody";
-
-            // act
-            CoreException result = assertThrows(CoreException.class, () -> {
-                userService.chargePoints(new UserId(unSavedId), 1000L);
-            });
-
-            // assert
-            assertThat(result.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
-            assertThat(result.getMessage()).contains("ID");
         }
 
     }

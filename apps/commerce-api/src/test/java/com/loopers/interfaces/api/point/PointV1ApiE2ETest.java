@@ -39,6 +39,7 @@ class PointV1ApiE2ETest {
     private static final String GENDER = "F";
     private static final String BIRTH_DATE = "1995-06-11";
     private static final String EMAIL = "donghee@test.com";
+    private static final Long POINT = 0L;
     private static final String SIGN_UP_ENDPOINT = "/api/v1/users";
     private static final String POINT_CHECK_ENDPOINT = "/api/v1/points";
     private static final String POINT_CHARGE_ENDPOINT = "/api/v1/points/charge";
@@ -51,6 +52,8 @@ class PointV1ApiE2ETest {
     private UserV1Dto.UserRequest defaultUserRequest() {
         return new UserV1Dto.UserRequest(USER_ID, GENDER, BIRTH_DATE, EMAIL);
     }
+
+    private PointV1Dto.PointChargeRequest defaultPointRequest() {return new PointV1Dto.PointChargeRequest(POINT); }
     @DisplayName("GET /api/v1/points")
     @Nested
     class PointCheck {
@@ -65,15 +68,14 @@ class PointV1ApiE2ETest {
             HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
 
             // act
-            ParameterizedTypeReference<ApiResponse<Long>> responseType = new ParameterizedTypeReference<>() {
-            };
-            ResponseEntity<ApiResponse<Long>> response =
+            ParameterizedTypeReference<ApiResponse<PointV1Dto.PointResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<PointV1Dto.PointResponse>> response =
                     testRestTemplate.exchange(POINT_CHECK_ENDPOINT, HttpMethod.GET, httpEntity, responseType);
 
             // assert
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
-                    () -> assertThat(response.getBody().data()).isEqualTo(0L)
+                    () -> assertThat(response.getBody().data().pointValue()).isEqualTo(0L)
             );
         }
 
@@ -84,9 +86,8 @@ class PointV1ApiE2ETest {
             HttpEntity<Void> httpEntity = new HttpEntity<>(null);
 
             // act
-            ParameterizedTypeReference<ApiResponse<Long>> responseType = new ParameterizedTypeReference<>() {
-            };
-            ResponseEntity<ApiResponse<Long>> response =
+            ParameterizedTypeReference<ApiResponse<PointV1Dto.PointResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<PointV1Dto.PointResponse>> response =
                     testRestTemplate.exchange(POINT_CHECK_ENDPOINT, HttpMethod.GET, httpEntity, responseType);
 
             // assert
@@ -112,14 +113,14 @@ class PointV1ApiE2ETest {
             HttpEntity<PointV1Dto.PointChargeRequest> httpEntity = new HttpEntity<>(request, headers);
 
             // act
-            ParameterizedTypeReference<ApiResponse<Long>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<Long>> response =
+            ParameterizedTypeReference<ApiResponse<PointV1Dto.PointResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<PointV1Dto.PointResponse>> response =
                     testRestTemplate.exchange(POINT_CHARGE_ENDPOINT, HttpMethod.POST, httpEntity, responseType);
 
             // assert
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
-                    () -> assertThat(response.getBody().data()).isEqualTo(1000L)
+                    () -> assertThat(response.getBody().data().pointValue()).isEqualTo(1000L)
             );
         }
 
@@ -133,8 +134,8 @@ class PointV1ApiE2ETest {
             HttpEntity<PointV1Dto.PointChargeRequest> httpEntity = new HttpEntity<>(request, headers);
 
             // act
-            ParameterizedTypeReference<ApiResponse<Long>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<Long>> response =
+            ParameterizedTypeReference<ApiResponse<PointV1Dto.PointResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<PointV1Dto.PointResponse>> response =
                     testRestTemplate.exchange(POINT_CHARGE_ENDPOINT, HttpMethod.POST, httpEntity, responseType);
 
             // assert

@@ -2,53 +2,47 @@ package com.loopers.domain.point;
 
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import jakarta.persistence.Embeddable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
-@Embeddable
+@Entity
+@Table(name = "member_point")
 public class Point {
 
     private static final long MINIMUM_INITIAL_POINT = 0L;
     private static final long MINIMUM_POSITIVE_POINT = 1L;
-    private final Long pointValue;
 
-    public Point() {
-        this.pointValue = 0L;
+    @Id
+    @Column(name = "user_id", nullable = false, unique = true)
+    private String userId;
+    private Long pointValue;
+
+    protected Point() {
     }
 
-    public Point(Long pointValue) {
+    public Point(String userId, Long pointValue) {
         validateInitialValue(pointValue);
+        this.userId = userId;
         this.pointValue = pointValue;
     }
 
-    public Point charge(Long amount) {
+    public void charge(Long amount) {
         validateChargeAmount(amount);
-        return new Point(this.pointValue + amount);
+        this.pointValue += amount;
     }
 
-    public Point use(Long amount) {
+    public void use(Long amount) {
         validateUseAmount(amount);
-        return new Point(this.pointValue - amount);
+        this.pointValue -= amount;
     }
 
+    public String getUserId() {
+        return userId;
+    }
     public Long getPointValue() {
         return pointValue;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Point otherPoint)) return false;
-        return pointValue.equals(otherPoint.pointValue);
-    }
-
-    @Override
-    public int hashCode() {
-        return pointValue.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return pointValue.toString();
     }
 
     // =============================

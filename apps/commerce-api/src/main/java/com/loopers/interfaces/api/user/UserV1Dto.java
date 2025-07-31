@@ -1,8 +1,8 @@
 package com.loopers.interfaces.api.user;
 
+import com.loopers.application.user.UserCommand;
+import com.loopers.application.user.UserInfo;
 import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.UserCommand;
-import com.loopers.domain.user.UserInfo;
 
 public class UserV1Dto {
     public record UserRequest(String userId, String gender, String birthDate, String email) {

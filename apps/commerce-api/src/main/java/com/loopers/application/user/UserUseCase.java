@@ -1,5 +1,7 @@
-package com.loopers.domain.user;
+package com.loopers.application.user;
 
+import com.loopers.application.point.PointUseCase;
+import com.loopers.domain.user.*;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -8,9 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Component
-public class UserService {
+public class UserUseCase {
 
     private final UserRepository userRepository;
+
+    private final PointUseCase pointUseCase;
 
     @Transactional(readOnly = true)
     public UserInfo getUserInfo(UserId userId) {
@@ -21,7 +25,7 @@ public class UserService {
 
     @Transactional
     public UserInfo signUp(UserCommand.Create command) {
-        if (userRepository.existsByUserId(command.userId())) {
+        if (userRepository.existsByUserId(new UserId(command.userId()))) {
             throw new CoreException(ErrorType.CONFLICT, "이미 가입된 ID 입니다.");
         }
 
@@ -33,23 +37,8 @@ public class UserService {
         );
 
         User saved = userRepository.save(user);
+        pointUseCase.initializePoint(new UserId(user.getUserId()));
+
         return UserInfo.from(saved);
-    }
-
-    @Transactional(readOnly = true)
-    public Long getPoints(UserId userId) {
-        return userRepository.find(userId)
-                .map(User::getPoint)
-                .orElse(null);
-    }
-
-    @Transactional
-    public Long chargePoints(UserId userId, Long amount) {
-        return userRepository.find(userId)
-                .map(user -> {
-                    user.chargePoint(amount);
-                    return user.getPoint();
-                })
-                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "해당 ID의 회원이 없습니다."));
     }
 }
