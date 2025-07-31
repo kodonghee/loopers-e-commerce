@@ -1,0 +1,39 @@
+package com.loopers.domain.order;
+
+import com.loopers.domain.BaseEntity;
+import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "order")
+public class Order extends BaseEntity {
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String userId;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "order_id")
+    private List<OrderItem> orderItems = new ArrayList<>();
+
+    protected Order() {}
+
+    public Order(String userId, List<OrderItem> items) {
+        this.userId = userId;
+        this.orderItems.addAll(items);
+    }
+
+    public Long getId() { return id; }
+
+    public String getUserId() { return userId; }
+
+    public List<OrderItem> getOrderItems() {
+        return orderItems;
+    }
+
+    public int getTotalAmount() {
+        return orderItems.stream().mapToInt(OrderItem::getTotalPrice).sum();
+    }
+}
