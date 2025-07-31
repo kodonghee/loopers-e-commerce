@@ -53,7 +53,6 @@ class PointV1ApiE2ETest {
         return new UserV1Dto.UserRequest(USER_ID, GENDER, BIRTH_DATE, EMAIL);
     }
 
-    private PointV1Dto.PointChargeRequest defaultPointRequest() {return new PointV1Dto.PointChargeRequest(POINT); }
     @DisplayName("GET /api/v1/points")
     @Nested
     class PointCheck {

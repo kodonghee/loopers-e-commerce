@@ -2,17 +2,15 @@ package com.loopers.application.point;
 
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointRepository;
-import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserId;
-import com.loopers.domain.user.UserRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
-@Component
+@Service
 public class PointUseCase {
 
     private final PointRepository pointRepository;
