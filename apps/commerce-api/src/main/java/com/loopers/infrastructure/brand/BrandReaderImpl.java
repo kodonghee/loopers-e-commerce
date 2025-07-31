@@ -1,6 +1,7 @@
 package com.loopers.infrastructure.brand;
 
 import com.loopers.domain.brand.Brand;
+import com.loopers.domain.brand.BrandReader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

@@ -1,13 +1,12 @@
-package com.loopers.infrastructure.like;
-
-import com.loopers.domain.like.Like;
-import org.springframework.data.jpa.repository.JpaRepository;
+package com.loopers.domain.like;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface LikeJpaRepository extends JpaRepository<Like, Long> {
+public interface LikeRepository {
     Optional<Like> findByUserIdAndProductId(String userId, Long productId);
+    void save(Like like);
+    void delete(Like like);
     List<Like> findAllByUserId(String userId);
     long countByProductId(Long productId);
 }

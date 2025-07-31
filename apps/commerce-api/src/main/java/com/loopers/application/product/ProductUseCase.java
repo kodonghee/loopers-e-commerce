@@ -1,6 +1,7 @@
 package com.loopers.application.product;
 
 import com.loopers.domain.brand.BrandReader;
+import com.loopers.domain.like.LikeCountReader;
 import com.loopers.domain.product.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
