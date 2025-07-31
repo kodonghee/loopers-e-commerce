@@ -47,6 +47,10 @@ public class User extends BaseEntity {
         return email;
     }
 
+    // =============================
+    // 🔒 Validation methods
+    // =============================
+
     private void validateUserId(String userId) {
         if (userId == null || userId.isBlank()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "ID는 빈 값이 될 수 없습니다.");

@@ -7,47 +7,59 @@ import jakarta.persistence.*;
 @Table(name = "product")
 public class Product extends BaseEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private final String name;
-    private int stock;
-    private final int price;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Embedded
+    private Stock stock;
+
+    @Embedded
+    private Money price;
+
     @Column(name = "brand_id", nullable = false)
     private Long brandId;
 
-    public Product(String name, int stock, int price) {
-        if (stock < 0) {
-            throw new IllegalArgumentException("재고는 0 이상이어야 합니다.");
-        }
-        if (price < 0) {
-            throw new IllegalArgumentException("가격은 0 이상이어야 합니다.");
-        }
+    protected Product() {
+    }
 
+    public Product(String name, Stock stock, Money price, Long brandId) {
+        validateName(name);
+        validateBrandId(brandId);
         this.name = name;
         this.stock = stock;
         this.price = price;
+        this.brandId = brandId;
     }
+
+    public String getName() { return name; }
+
+    public Stock getStock() { return stock; }
+
+    public Money getPrice() { return price; }
+
+    public Long getBrandId() { return brandId; }
 
     public void decreaseStock(int quantity) {
-        if (quantity <= 0) {
-            throw new IllegalArgumentException("차감 수량은 0보다 커야 합니다.");
+        this.stock = stock.decrease(quantity);
+    }
+
+    // =============================
+    // 🔒 Validation methods
+    // =============================
+
+    private void validateName(String name) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("상품명은 필수입니다.");
         }
-        if (this.stock < quantity) {
-            throw new IllegalArgumentException("재고가 부족합니다.");
+    }
+
+    private void validateBrandId(Long brandId) {
+        if (brandId == null || brandId <= 0) {
+            throw new IllegalArgumentException("브랜드 ID는 필수입니다.");
         }
-
-        this.stock -= quantity;
-    }
-
-    public int getStock() {
-        return stock;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public int getPrice() {
-        return price;
     }
 }
