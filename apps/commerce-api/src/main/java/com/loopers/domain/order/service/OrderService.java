@@ -2,33 +2,47 @@ package com.loopers.domain.order.service;
 
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
+import com.loopers.domain.point.Point;
+import com.loopers.domain.point.PointRepository;
+import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductRepository;
+import com.loopers.domain.user.UserId;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.function.BiFunction;
 
+@Service
 public class OrderService {
 
-    private final BiFunction<Long, Integer, Boolean> stockValidator;
-    private final BiFunction<String, Integer, Boolean> pointValidator;
+    private final ProductRepository productRepository;
+    private final PointRepository pointRepository;
 
-    public OrderService(BiFunction<Long, Integer, Boolean> stockValidator,
-                        BiFunction<String, Integer, Boolean> pointValidator) {
-        this.stockValidator = stockValidator;
-        this.pointValidator = pointValidator;
+    public OrderService(ProductRepository productRepository,
+                        PointRepository pointRepository) {
+        this.productRepository = productRepository;
+        this.pointRepository = pointRepository;
     }
 
     public Order createOrder(String userId, List<OrderItem> items) {
-        int totalAmount = items.stream().mapToInt(OrderItem::getTotalPrice).sum();
+        int totalAmount = items.stream()
+                .mapToInt(OrderItem::getTotalPrice)
+                .sum();
 
         for (OrderItem item : items) {
-            if (!stockValidator.apply(item.getProductId(), item.getQuantity())) {
+            Product product = productRepository.findById(item.getProductId())
+                    .orElseThrow(() -> new CoreException(ErrorType.BAD_REQUEST));
+
+            if (product.getStock().getValue() < item.getQuantity()) {
                 throw new CoreException(ErrorType.BAD_REQUEST);
             }
         }
 
-        if (!pointValidator.apply(userId, totalAmount)) {
+        Point point = pointRepository.find(new UserId(userId))
+                .orElseThrow(() -> new CoreException(ErrorType.BAD_REQUEST));
+
+        if (point.getPointValue() < totalAmount) {
             throw new CoreException(ErrorType.BAD_REQUEST);
         }
 

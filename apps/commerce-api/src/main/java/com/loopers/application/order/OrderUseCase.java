@@ -29,7 +29,7 @@ public class OrderUseCase {
         Order order = orderService.createOrder(command.userId(), items);
         orderRepository.save(order);
 
-        orderEventSender.sendOrderEvent(order.getId());
+        orderEventSender.send(order.getId());
 
         return order.getId();
     }
