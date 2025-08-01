@@ -25,6 +25,7 @@ public class UserUseCase {
 
     @Transactional
     public UserInfo signUp(UserCommand.Create command) {
+
         if (userRepository.existsByUserId(new UserId(command.userId()))) {
             throw new CoreException(ErrorType.CONFLICT, "이미 가입된 ID 입니다.");
         }
