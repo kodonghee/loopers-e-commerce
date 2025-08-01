@@ -1,10 +1,10 @@
 package com.loopers.application.user;
 
-import com.loopers.application.point.PointUseCase;
 import com.loopers.domain.user.*;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +14,7 @@ public class UserUseCase {
 
     private final UserRepository userRepository;
 
-    private final PointUseCase pointUseCase;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public UserInfo getUserInfo(UserId userId) {
@@ -37,7 +37,7 @@ public class UserUseCase {
         );
 
         User saved = userRepository.save(user);
-        pointUseCase.initializePoint(new UserId(user.getUserId()));
+        eventPublisher.publishEvent(new UserSignedUpEvent(new UserId(saved.getUserId())));
 
         return UserInfo.from(saved);
     }
