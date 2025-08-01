@@ -55,7 +55,7 @@ public class OrderUseCase {
                 o.getUserId(),
                 o.getTotalAmount(),
                 o.getOrderItems().stream()
-                        .map(i -> new OrderInfo.OrderItemInfo(i.getProductId(), i.getQuantity(), i.getTotalPrice() / i.getQuantity()))
+                        .map(i -> new OrderInfo.OrderItemInfo(i.getProductId(), i.getQuantity(), i.getPrice()))
                         .collect(Collectors.toList())
         );
     }

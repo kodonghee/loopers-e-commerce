@@ -2,6 +2,7 @@ package com.loopers.interfaces.api.order;
 
 import com.loopers.application.order.OrderInfo;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class OrderV1Dto {
@@ -9,7 +10,7 @@ public class OrderV1Dto {
     public record OrderResponse(
             Long orderId,
             String userId,
-            int totalAmount,
+            BigDecimal totalAmount,
             List<OrderItemResponse> items
     ) {
         public static OrderResponse from(OrderInfo info) {
@@ -22,7 +23,7 @@ public class OrderV1Dto {
         }
     }
 
-    public record OrderItemResponse(Long productId, int quantity, int price) {
+    public record OrderItemResponse(Long productId, int quantity, BigDecimal price) {
         public static OrderItemResponse from(OrderInfo.OrderItemInfo info) {
             return new OrderItemResponse(info.productId(), info.quantity(), info.price());
         }
@@ -35,6 +36,6 @@ public class OrderV1Dto {
             return items;
         }
 
-        public record OrderItemRequest(Long productId, int quantity, int price) {}
+        public record OrderItemRequest(Long productId, int quantity, BigDecimal price) {}
     }
 }

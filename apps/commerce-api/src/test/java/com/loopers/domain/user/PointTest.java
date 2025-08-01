@@ -7,6 +7,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -19,11 +21,11 @@ class PointTest {
         void failToCharge_whenChargeAmountIsZeroOrNegative() {
             // arrange
             User user = new User("gdh5866", Gender.F, "1995-06-11", "donghee@test.com");
-            Point point = new Point(user.getUserId(), 0L);
+            Point point = new Point(user.getUserId(), BigDecimal.ZERO);
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                point.charge(0L);
+                point.charge(BigDecimal.ZERO);
             });
 
             // assert
@@ -36,13 +38,13 @@ class PointTest {
         void succeedToCharge_whenChargeAmountIsValid() {
             // arrange
             User user = new User("gdh5866", Gender.F, "1995-06-11", "donghee@test.com");
-            Point point = new Point(user.getUserId(), 0L);
+            Point point = new Point(user.getUserId(), BigDecimal.ZERO);
 
             // act
-            point.charge(300L);
+            point.charge(new BigDecimal("300"));
 
             // assert
-            assertThat(point.getPointValue()).isEqualTo(300L);
+            assertThat(point.getPointValue()).isEqualTo(new BigDecimal("300"));
         }
     }
 }

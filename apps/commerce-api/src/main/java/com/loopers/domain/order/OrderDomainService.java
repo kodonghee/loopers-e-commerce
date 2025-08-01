@@ -9,6 +9,7 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -24,9 +25,9 @@ public class OrderDomainService {
     }
 
     public Order createOrder(String userId, List<OrderItem> items) {
-        int totalAmount = items.stream()
-                .mapToInt(OrderItem::getTotalPrice)
-                .sum();
+        BigDecimal totalAmount = items.stream()
+                .map(OrderItem::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         for (OrderItem item : items) {
             Product product = productRepository.findById(item.getProductId())
@@ -40,7 +41,7 @@ public class OrderDomainService {
         Point point = pointRepository.find(new UserId(userId))
                 .orElseThrow(() -> new CoreException(ErrorType.BAD_REQUEST));
 
-        if (point.getPointValue() < totalAmount) {
+        if (point.getPointValue().compareTo(totalAmount) < 0) {
             throw new CoreException(ErrorType.BAD_REQUEST);
         }
 

@@ -11,6 +11,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+
 @RequiredArgsConstructor
 @Service
 public class PointUseCase {
@@ -18,16 +20,17 @@ public class PointUseCase {
     private final PointRepository pointRepository;
 
     @Transactional(readOnly = true)
-    public Long getPoints(UserId userId) {
+    public BigDecimal getPoints(UserId userId) {
         return pointRepository.find(userId)
                 .map(Point::getPointValue)
                 .orElse(null);
     }
 
     @Transactional
-    public Long chargePoints(UserId userId, Long amount) {
+    public BigDecimal chargePoints(UserId userId, BigDecimal amount) {
         return pointRepository.find(userId)
                 .map(point -> {
+                    // charge 메서드에 BigDecimal 타입을 전달합니다.
                     point.charge(amount);
                     return point.getPointValue();
                 })
@@ -37,7 +40,6 @@ public class PointUseCase {
     @EventListener
     @Transactional
     public void handleUserSignedUpEvent(UserSignedUpEvent event) {
-        pointRepository.save(new Point(event.userId().getUserId(), 0L));
+        pointRepository.save(new Point(event.userId().getUserId(), BigDecimal.ZERO));
     }
 }
-

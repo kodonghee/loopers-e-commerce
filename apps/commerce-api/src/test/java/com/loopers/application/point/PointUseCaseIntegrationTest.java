@@ -17,6 +17,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
+import java.math.BigDecimal;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -50,14 +52,14 @@ class PointUseCaseIntegrationTest {
             String birthDate = "1995-06-11";
             String email = "donghee@test.com";
             User user = new User(userId, Gender.F, birthDate, email);
-            pointRepository.save(new Point(user.getUserId(), 0L));
+            pointRepository.save(new Point(user.getUserId(), BigDecimal.ZERO));
 
             // act
-            Long point = pointUseCase.getPoints(new UserId(userId));
+            BigDecimal point = pointUseCase.getPoints(new UserId(userId));
 
             // assert
             assertThat(point).isNotNull();
-            assertThat(point).isEqualTo(0L);
+            assertThat(point.compareTo(BigDecimal.ZERO)).isEqualTo(0);
         }
 
 
@@ -68,7 +70,7 @@ class PointUseCaseIntegrationTest {
             String unSavedId = "somebody";
 
             // act
-            Long point = pointUseCase.getPoints(new UserId(unSavedId));
+            BigDecimal point = pointUseCase.getPoints(new UserId(unSavedId));
 
             // assert
             assertThat(point).isNull();
@@ -87,13 +89,12 @@ class PointUseCaseIntegrationTest {
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                pointUseCase.chargePoints(new UserId(unSavedId), 1000L);
+                pointUseCase.chargePoints(new UserId(unSavedId), BigDecimal.valueOf(1000));
             });
 
             // assert
             assertThat(result.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
             assertThat(result.getMessage()).contains("ID");
         }
-
     }
 }

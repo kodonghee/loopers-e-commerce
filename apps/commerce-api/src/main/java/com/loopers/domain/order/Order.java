@@ -2,6 +2,8 @@ package com.loopers.domain.order;
 
 import com.loopers.domain.BaseEntity;
 import jakarta.persistence.*;
+
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +35,9 @@ public class Order extends BaseEntity {
         return orderItems;
     }
 
-    public int getTotalAmount() {
-        return orderItems.stream().mapToInt(OrderItem::getTotalPrice).sum();
+    public BigDecimal getTotalAmount() {
+        return orderItems.stream()
+                .map(OrderItem::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }
