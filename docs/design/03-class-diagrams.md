@@ -4,57 +4,82 @@
 ```mermaid
 classDiagram
 class User {
-        Long id
-        String userId
-        Gender gender
-        String email
-        LocalDate birthDate
-        Point point
+        -Long id
+        -String userId
+        -Gender gender
+        -String email
+        -LocalDate birthDate
+        -Point point
+        
+        +void chargePoint(Long amount)
+        +void usePoint(Long amount)
     }
 
     class Point {
-        int value
+        -int value
+        
+        +Point charge(Long amount)
+        +Point use(Long amount)
     }
 
     class Product {
-        Long id
-        String name
-        Stock stock
+        -Long id
+        -String name
+        -int price
+        -int likesCount
+        -Stock stock
+        -Brand brand
+        
+        +void increaseLikes()
+        +void decreaseLikes()
+        +void decreaseStock(int quantity)
+        +boolean hasSufficientStock(int quantity)
     }
 
     class Stock {
-        int quantity
+        -int quantity
+        
+        +void decrease(int amount)
+        +boolean isAvailable(int amount)
     }
 
     class Brand {
-        Long id
-        String name
+        -Long id
+        -String name
     }
 
     class Like {
-        Long id
-        User user
-        Product product
+        -Long id
+        -User user
+        -Product product
+        
+        +boolean isSameUser(User other)
+        +boolean isSameProduct(Product other)
     }
 
     class Order {
-        Long id
-        User user
-        List~OrderItem~ orderItems
+        -Long id
+        -User user
+        -List~OrderItem~ orderItems
+        
+        +int getTotalPrice()
+        +void validateStock()
+        +void place()
     }
 
     class OrderItem {
-        Long id
-        int quantity
-        Product product
-        Order order
+        -Long id
+        -int quantity
+        -Product product
+        -Order order
+        
+        +int getSubtotal()
     }
 
     class Gender {
         <<enum>>
-        MALE
-        FEMALE
-        OTHER
+        M
+        F
     }
 
     %% 관계 정의
