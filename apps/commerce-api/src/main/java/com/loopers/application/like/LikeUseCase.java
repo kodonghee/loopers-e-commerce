@@ -1,6 +1,6 @@
 package com.loopers.application.like;
 
-import com.loopers.domain.like.Like;
+import com.loopers.domain.like.LikeDomainService;
 import com.loopers.domain.like.LikeRepository;
 import com.loopers.domain.user.UserId;
 import lombok.RequiredArgsConstructor;
@@ -13,21 +13,18 @@ import java.util.List;
 @Service
 public class LikeUseCase {
 
+    private final LikeDomainService likeDomainService;
+
     private final LikeRepository likeRepository;
 
     @Transactional
     public void likeProduct(UserId userId, Long productId) {
-        likeRepository.findByUserIdAndProductId(userId, productId)
-                .ifPresentOrElse(
-                        like -> {},
-                        () -> likeRepository.save(new Like(userId.getUserId(), productId))
-                );
+        likeDomainService.addLike(userId, productId);
     }
 
     @Transactional
     public void cancelLikeProduct(UserId userId, Long productId) {
-        likeRepository.findByUserIdAndProductId(userId, productId)
-                .ifPresent(likeRepository::delete);
+        likeDomainService.removeLike(userId, productId);
     }
 
     @Transactional(readOnly = true)

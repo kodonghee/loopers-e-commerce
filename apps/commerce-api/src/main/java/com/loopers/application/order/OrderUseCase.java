@@ -2,9 +2,9 @@ package com.loopers.application.order;
 
 import com.loopers.application.order.port.OrderEventSender;
 import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderDomainService;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderRepository;
-import com.loopers.domain.order.service.OrderService;
 import com.loopers.domain.user.UserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 public class OrderUseCase {
 
     private final OrderRepository orderRepository;
-    private final OrderService orderService;
+    private final OrderDomainService orderService;
     private final OrderEventSender orderEventSender;
 
     @Transactional

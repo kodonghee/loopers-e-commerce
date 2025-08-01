@@ -1,7 +1,5 @@
-package com.loopers.domain.order.service;
+package com.loopers.domain.order;
 
-import com.loopers.domain.order.Order;
-import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.product.Product;
@@ -14,13 +12,13 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class OrderService {
+public class OrderDomainService {
 
     private final ProductRepository productRepository;
     private final PointRepository pointRepository;
 
-    public OrderService(ProductRepository productRepository,
-                        PointRepository pointRepository) {
+    public OrderDomainService(ProductRepository productRepository,
+                              PointRepository pointRepository) {
         this.productRepository = productRepository;
         this.pointRepository = pointRepository;
     }
