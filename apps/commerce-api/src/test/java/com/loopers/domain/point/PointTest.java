@@ -1,6 +1,7 @@
-package com.loopers.domain.user;
+package com.loopers.domain.point;
 
-import com.loopers.domain.point.Point;
+import com.loopers.domain.user.Gender;
+import com.loopers.domain.user.User;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
@@ -10,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class PointTest {
     @DisplayName("포인트 충전 단위 테스트")
