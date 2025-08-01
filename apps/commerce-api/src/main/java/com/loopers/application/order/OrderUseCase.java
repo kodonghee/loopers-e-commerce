@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -24,7 +25,7 @@ public class OrderUseCase {
     public Long placeOrder(OrderCommand command) {
         List<OrderItem> items = command.items().stream()
                 .map(i -> new OrderItem(i.productId(), i.quantity(), i.price()))
-                .toList();
+                .collect(Collectors.toList());
 
         Order order = orderService.createOrder(command.userId(), items);
         orderRepository.save(order);
@@ -38,7 +39,7 @@ public class OrderUseCase {
     public List<OrderInfo> getOrderList(UserId userId) {
         return orderRepository.findAllByUserId(userId).stream()
                 .map(this::toInfo)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -55,7 +56,7 @@ public class OrderUseCase {
                 o.getTotalAmount(),
                 o.getOrderItems().stream()
                         .map(i -> new OrderInfo.OrderItemInfo(i.getProductId(), i.getQuantity(), i.getTotalPrice() / i.getQuantity()))
-                        .toList()
+                        .collect(Collectors.toList())
         );
     }
 }

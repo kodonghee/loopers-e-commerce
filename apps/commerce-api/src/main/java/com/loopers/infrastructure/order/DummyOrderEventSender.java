@@ -7,6 +7,6 @@ import org.springframework.stereotype.Component;
 public class DummyOrderEventSender implements OrderEventSender {
     @Override
     public void send(Long orderId) {
-
+        System.out.println("Dummy event sent for order: " + orderId);
     }
 }
