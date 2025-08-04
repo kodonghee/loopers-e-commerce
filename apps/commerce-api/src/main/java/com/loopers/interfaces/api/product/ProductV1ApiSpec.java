@@ -1,6 +1,6 @@
 package com.loopers.interfaces.api.product;
 
-import com.loopers.domain.product.ProductSortType;
+import com.loopers.domain.product.ProductSearchCondition;
 import com.loopers.interfaces.api.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,7 +26,7 @@ public interface ProductV1ApiSpec {
 
             @Parameter(description = "정렬 기준 (latest, price_asc, likes_desc)", example = "latest")
             @RequestParam(name = "sort", defaultValue = "latest")
-            ProductSortType sortType,
+            ProductSearchCondition.ProductSortType sortType,
 
             @Parameter(description = "페이지 번호", example = "0")
             @RequestParam(name = "page", defaultValue = "0")

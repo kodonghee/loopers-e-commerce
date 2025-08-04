@@ -3,11 +3,8 @@ package com.loopers.infrastructure.product;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.ProductSearchCondition;
-import com.loopers.domain.product.ProductSortType;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -24,8 +21,8 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public void save(Product product) {
-        productJpaRepository.save(product);
+    public Product save(Product product) {
+        return productJpaRepository.save(product);
     }
 
     @Override
@@ -35,11 +32,7 @@ public class ProductRepositoryImpl implements ProductRepository {
 
     @Override
     public List<Product> findAllByCondition(ProductSearchCondition condition) {
-        Pageable pageable = PageRequest.of(
-                condition.getPage(),
-                condition.getSize(),
-                convertSort(condition.getSortType())
-        );
+        Pageable pageable = condition.getPageable();
 
         if (condition.getBrandId() != null) {
             return productJpaRepository.findAllByBrandId(condition.getBrandId(), pageable).getContent();
@@ -48,11 +41,4 @@ public class ProductRepositoryImpl implements ProductRepository {
         }
     }
 
-    private Sort convertSort(ProductSortType sortType) {
-        return switch (sortType) {
-            case LATEST -> Sort.by(Sort.Direction.DESC, "createdAt");
-            case PRICE_ASC -> Sort.by(Sort.Direction.ASC, "price.amount");
-            case LIKES_DESC -> Sort.by(Sort.Direction.DESC, "likeCount");
-        };
-    }
 }

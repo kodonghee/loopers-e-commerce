@@ -35,8 +35,10 @@ class OrderDomainServiceTest {
         private final Map<Long, Product> products = new HashMap<>();
         private final AtomicLong idGenerator = new AtomicLong(0L);
 
-        public void save(Long id, Product product) {
+        public Product save(Long id, Product product) {
+
             products.put(id, product);
+            return product;
         }
 
         @Override
@@ -45,9 +47,11 @@ class OrderDomainServiceTest {
         }
 
         @Override
-        public void save(Product product) {
+        public Product save(Product product) {
             long newId = idGenerator.incrementAndGet();
             products.put(newId, product);
+
+            return product;
         }
 
         @Override

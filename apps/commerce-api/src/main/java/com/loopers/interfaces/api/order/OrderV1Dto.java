@@ -1,9 +1,11 @@
 package com.loopers.interfaces.api.order;
 
 import com.loopers.application.order.OrderInfo;
+import com.loopers.domain.order.Order;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class OrderV1Dto {
 
@@ -37,5 +39,6 @@ public class OrderV1Dto {
         }
 
         public record OrderItemRequest(Long productId, int quantity, BigDecimal price) {}
+
     }
 }

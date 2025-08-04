@@ -1,11 +1,13 @@
 package com.loopers.domain.product;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.math.BigDecimal;
 
 @Embeddable
 public class Money {
 
+    @Column(name = "price")
     private BigDecimal amount;
 
     protected Money() {

@@ -18,7 +18,7 @@ public class ProductUseCase {
     private final LikeCountReader likeCountReader;
 
     @Transactional
-    public Long create(ProductCommand command) {
+    public Product create(ProductCommand command) {
 
         Product product = new Product(
                 command.name(),
@@ -26,8 +26,7 @@ public class ProductUseCase {
                 new Money(command.priceValue()),
                 command.brandId()
         );
-        productRepository.save(product);
-        return product.getId();
+        return productRepository.save(product);
     }
 
     @Transactional(readOnly = true)
@@ -46,7 +45,7 @@ public class ProductUseCase {
 
         String brandName = brandReader.getBrandName(product.getBrandId());
         int likeCount = likeCountReader.getLikeCountByProductId(product.getId());
-
+        // 여기에 productDomainService 두는 것의 장점? 리팩토링 때 반영하기
         return new ProductInfo(
                 product.getId(),
                 product.getName(),
