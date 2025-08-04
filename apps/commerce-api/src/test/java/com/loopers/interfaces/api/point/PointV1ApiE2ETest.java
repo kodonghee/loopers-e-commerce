@@ -14,6 +14,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 
+import java.math.BigDecimal;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -39,6 +41,7 @@ class PointV1ApiE2ETest {
     private static final String GENDER = "F";
     private static final String BIRTH_DATE = "1995-06-11";
     private static final String EMAIL = "donghee@test.com";
+    private static final BigDecimal POINT = BigDecimal.ZERO;
     private static final String SIGN_UP_ENDPOINT = "/api/v1/users";
     private static final String POINT_CHECK_ENDPOINT = "/api/v1/points";
     private static final String POINT_CHARGE_ENDPOINT = "/api/v1/points/charge";
@@ -51,29 +54,33 @@ class PointV1ApiE2ETest {
     private UserV1Dto.UserRequest defaultUserRequest() {
         return new UserV1Dto.UserRequest(USER_ID, GENDER, BIRTH_DATE, EMAIL);
     }
+
     @DisplayName("GET /api/v1/points")
     @Nested
     class PointCheck {
         @DisplayName("포인트 조회에 성공할 경우, 보유 포인트를 응답으로 반환한다.")
         @Test
-        void returnsPoints_whenPointCheckIsSuccessful() {
+        void returnsPoints_whenPointCheckIsSuccessful() throws InterruptedException {
             // arrange
             testRestTemplate.postForEntity(SIGN_UP_ENDPOINT, defaultUserRequest(), Void.class);
+
+            // 이벤트 리스너가 비동기적으로 실행될 수 있으므로,
+            // 데이터베이스에 포인트 정보가 저장될 시간을 확보하기 위해 잠시 대기합니다.
+            Thread.sleep(500);
 
             HttpHeaders headers = new HttpHeaders();
             headers.add("X-USER-ID", USER_ID);
             HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
 
             // act
-            ParameterizedTypeReference<ApiResponse<Long>> responseType = new ParameterizedTypeReference<>() {
-            };
-            ResponseEntity<ApiResponse<Long>> response =
+            ParameterizedTypeReference<ApiResponse<PointV1Dto.PointResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<PointV1Dto.PointResponse>> response =
                     testRestTemplate.exchange(POINT_CHECK_ENDPOINT, HttpMethod.GET, httpEntity, responseType);
 
             // assert
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
-                    () -> assertThat(response.getBody().data()).isEqualTo(0L)
+                    () -> assertThat(response.getBody().data().pointValue()).isEqualByComparingTo(BigDecimal.ZERO)
             );
         }
 
@@ -84,9 +91,8 @@ class PointV1ApiE2ETest {
             HttpEntity<Void> httpEntity = new HttpEntity<>(null);
 
             // act
-            ParameterizedTypeReference<ApiResponse<Long>> responseType = new ParameterizedTypeReference<>() {
-            };
-            ResponseEntity<ApiResponse<Long>> response =
+            ParameterizedTypeReference<ApiResponse<PointV1Dto.PointResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<PointV1Dto.PointResponse>> response =
                     testRestTemplate.exchange(POINT_CHECK_ENDPOINT, HttpMethod.GET, httpEntity, responseType);
 
             // assert
@@ -108,18 +114,18 @@ class PointV1ApiE2ETest {
 
             HttpHeaders headers = new HttpHeaders();
             headers.add("X-USER-ID", USER_ID);
-            PointV1Dto.PointChargeRequest request = new PointV1Dto.PointChargeRequest(1000L);
+            PointV1Dto.PointChargeRequest request = new PointV1Dto.PointChargeRequest(new BigDecimal("1000"));
             HttpEntity<PointV1Dto.PointChargeRequest> httpEntity = new HttpEntity<>(request, headers);
 
             // act
-            ParameterizedTypeReference<ApiResponse<Long>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<Long>> response =
+            ParameterizedTypeReference<ApiResponse<PointV1Dto.PointResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<PointV1Dto.PointResponse>> response =
                     testRestTemplate.exchange(POINT_CHARGE_ENDPOINT, HttpMethod.POST, httpEntity, responseType);
 
             // assert
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
-                    () -> assertThat(response.getBody().data()).isEqualTo(1000L)
+                    () -> assertThat(response.getBody().data().pointValue()).isEqualByComparingTo(new BigDecimal("1000"))
             );
         }
 
@@ -129,12 +135,12 @@ class PointV1ApiE2ETest {
             // arrange
             HttpHeaders headers = new HttpHeaders();
             headers.add("X-USER-ID", USER_ID);
-            PointV1Dto.PointChargeRequest request = new PointV1Dto.PointChargeRequest(1000L);
+            PointV1Dto.PointChargeRequest request = new PointV1Dto.PointChargeRequest(new BigDecimal("1000"));
             HttpEntity<PointV1Dto.PointChargeRequest> httpEntity = new HttpEntity<>(request, headers);
 
             // act
-            ParameterizedTypeReference<ApiResponse<Long>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<Long>> response =
+            ParameterizedTypeReference<ApiResponse<PointV1Dto.PointResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<PointV1Dto.PointResponse>> response =
                     testRestTemplate.exchange(POINT_CHARGE_ENDPOINT, HttpMethod.POST, httpEntity, responseType);
 
             // assert

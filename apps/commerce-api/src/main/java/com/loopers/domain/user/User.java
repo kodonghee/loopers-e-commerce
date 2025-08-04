@@ -16,21 +16,18 @@ public class User extends BaseEntity {
 
     @Column(name = "user_id", unique = true, nullable = false)
     private String userId;
-    private String gender;
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
     private String birthDate;
     private String email;
 
-    @Embedded
-    private Point point = new Point();
-
     protected User() {}
 
-    public User(String userId, String gender, String birthDate, String email) {
+    public User(String userId, Gender gender, String birthDate, String email) {
 
         validateUserId(userId);
         validateEmail(email);
         validateBirthDate(birthDate);
-        validateGender(gender);
 
         this.userId = userId;
         this.gender = gender;
@@ -40,7 +37,7 @@ public class User extends BaseEntity {
 
     public String getUserId() { return userId; }
 
-    public String getGender() {
+    public Gender getGender() {
         return gender;
     }
 
@@ -50,15 +47,9 @@ public class User extends BaseEntity {
         return email;
     }
 
-    public Long getPoint() { return point.getPointValue(); }
-
-    public void chargePoint(Long points) {
-        this.point = this.point.charge(points);
-    }
-
-    public void usePoint(Long points) throws IllegalAccessException {
-        this.point = this.point.use(points);
-    }
+    // =============================
+    // 🔒 Validation methods
+    // =============================
 
     private void validateUserId(String userId) {
         if (userId == null || userId.isBlank()) {
@@ -91,15 +82,4 @@ public class User extends BaseEntity {
             throw new CoreException(ErrorType.BAD_REQUEST, "생년월일은 yyyy-MM-dd 형식에 맞아야 합니다.");
         }
     }
-
-    private void validateGender(String gender) {
-        if (gender == null || gender.isBlank()) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "성별은 빈 값이 될 수 없습니다.");
-        }
-
-        if (!"F".equals(gender) && !"M".equals(gender)) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "성별은 'F' 또는 'M'이어야 합니다.");
-        }
-    }
-
 }

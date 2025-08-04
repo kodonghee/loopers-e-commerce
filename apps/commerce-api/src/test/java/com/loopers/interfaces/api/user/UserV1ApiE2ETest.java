@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class UserV1ApiE2ETest {
 
     private final TestRestTemplate testRestTemplate;
-    private final UserJpaRepository userJpaRepository;
     private final DatabaseCleanUp databaseCleanUp;
 
     @Autowired
@@ -32,7 +31,6 @@ public class UserV1ApiE2ETest {
             DatabaseCleanUp databaseCleanUp
     ) {
         this.testRestTemplate = testRestTemplate;
-        this.userJpaRepository = userJpaRepository;
         this.databaseCleanUp = databaseCleanUp;
     }
 
