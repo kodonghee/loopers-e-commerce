@@ -1,15 +1,17 @@
 package com.loopers.domain.like;
 
 import com.loopers.domain.user.UserId;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@RequiredArgsConstructor
-@Service
-public class LikeDomainService {
+import java.util.List;
+
+public class LikeService {
 
     private final LikeRepository likeRepository;
+
+    public LikeService(LikeRepository likeRepository) {
+        this.likeRepository = likeRepository;
+    }
 
     @Transactional
     public void addLike(UserId userId, Long productId) {
@@ -28,5 +30,10 @@ public class LikeDomainService {
     @Transactional(readOnly = true)
     public long getLikesCount(Long productId) {
         return likeRepository.countByProductId(productId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Like> getAllByUserId(UserId userId) {
+        return likeRepository.findAllByUserId(userId);
     }
 }

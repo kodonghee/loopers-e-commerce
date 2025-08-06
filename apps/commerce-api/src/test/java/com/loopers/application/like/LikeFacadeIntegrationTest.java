@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
-public class LikeUseCaseIntegrationTest {
+public class LikeFacadeIntegrationTest {
     @DisplayName("상품 좋아요 등록에 성공 한다.")
     @Test
     void createLikeSuccessfully() {

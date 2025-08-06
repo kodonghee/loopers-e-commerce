@@ -6,7 +6,6 @@ import com.loopers.domain.user.UserId;
 import com.loopers.domain.user.UserSignedUpEvent;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,10 +26,10 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PointUseCase 단위 테스트")
-class PointUseCaseTest {
+class PointFacadeTest {
 
     @InjectMocks
-    private PointUseCase pointUseCase;
+    private PointFacade pointFacade;
 
     @Mock
     private PointRepository pointRepository;
@@ -51,7 +50,7 @@ class PointUseCaseTest {
             when(pointRepository.find(USER_ID)).thenReturn(Optional.of(mockPoint));
 
             // act
-            BigDecimal result = pointUseCase.getPoints(USER_ID);
+            BigDecimal result = pointFacade.getPoints(USER_ID);
 
             // assert
             assertThat(result).isEqualTo(INITIAL_AMOUNT);
@@ -65,7 +64,7 @@ class PointUseCaseTest {
             when(pointRepository.find(USER_ID)).thenReturn(Optional.empty());
 
             // act
-            BigDecimal result = pointUseCase.getPoints(USER_ID);
+            BigDecimal result = pointFacade.getPoints(USER_ID);
 
             // assert
             assertThat(result).isNull();
@@ -84,7 +83,7 @@ class PointUseCaseTest {
             when(pointRepository.find(USER_ID)).thenReturn(Optional.of(existingPoint));
 
             // act
-            BigDecimal result = pointUseCase.chargePoints(USER_ID, CHARGE_AMOUNT);
+            BigDecimal result = pointFacade.chargePoints(USER_ID, CHARGE_AMOUNT);
 
             // assert
             BigDecimal expectedBalance = INITIAL_AMOUNT.add(CHARGE_AMOUNT);
@@ -101,7 +100,7 @@ class PointUseCaseTest {
 
             // act & assert
             CoreException thrownException = assertThrows(CoreException.class,
-                    () -> pointUseCase.chargePoints(USER_ID, CHARGE_AMOUNT));
+                    () -> pointFacade.chargePoints(USER_ID, CHARGE_AMOUNT));
             assertThat(thrownException.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
             assertThat(thrownException.getMessage()).isEqualTo("해당 ID의 회원이 없습니다.");
             verify(pointRepository).find(USER_ID);
@@ -119,7 +118,7 @@ class PointUseCaseTest {
             ArgumentCaptor<Point> pointCaptor = ArgumentCaptor.forClass(Point.class);
 
             // act
-            pointUseCase.handleUserSignedUpEvent(event);
+            pointFacade.handleUserSignedUpEvent(event);
 
             // assert
             verify(pointRepository).save(pointCaptor.capture());

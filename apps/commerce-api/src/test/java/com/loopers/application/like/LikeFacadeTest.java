@@ -1,7 +1,7 @@
 package com.loopers.application.like;
 
 import com.loopers.domain.like.Like;
-import com.loopers.domain.like.LikeDomainService;
+import com.loopers.domain.like.LikeService;
 import com.loopers.domain.like.LikeRepository;
 import com.loopers.domain.user.UserId;
 import org.junit.jupiter.api.DisplayName;
@@ -20,15 +20,15 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("LikeUseCase 단위 테스트")
-class LikeUseCaseTest {
+class LikeFacadeTest {
 
     // 테스트 대상인 UseCase 객체에 Mock 객체들을 주입
     @InjectMocks
-    private LikeUseCase likeUseCase;
+    private LikeFacade likeFacade;
 
     // UseCase가 의존하는 LikeDomainService를 Mock 객체로 생성
     @Mock
-    private LikeDomainService likeDomainService;
+    private LikeService likeService;
 
     // UseCase가 직접 사용하는 LikeRepository를 Mock 객체로 생성
     @Mock
@@ -48,10 +48,10 @@ class LikeUseCaseTest {
             // arrange
 
             // act
-            likeUseCase.likeProduct(USER_ID, PRODUCT_ID);
+            likeFacade.likeProduct(USER_ID, PRODUCT_ID);
 
             // assert
-            verify(likeDomainService).addLike(USER_ID, PRODUCT_ID);
+            verify(likeService).addLike(USER_ID, PRODUCT_ID);
         }
     }
 
@@ -66,10 +66,10 @@ class LikeUseCaseTest {
             // 특별한 사전 설정은 필요하지 않습니다.
 
             // act
-            likeUseCase.cancelLikeProduct(USER_ID, PRODUCT_ID);
+            likeFacade.cancelLikeProduct(USER_ID, PRODUCT_ID);
 
             // assert
-            verify(likeDomainService).removeLike(USER_ID, PRODUCT_ID);
+            verify(likeService).removeLike(USER_ID, PRODUCT_ID);
         }
     }
 
@@ -86,13 +86,13 @@ class LikeUseCaseTest {
             );
             when(likeRepository.findAllByUserId(USER_ID)).thenReturn(mockLikes);
 
-            List<LikeInfo> expectedList = List.of(
-                    new LikeInfo(USER_ID_STRING, PRODUCT_ID),
-                    new LikeInfo(USER_ID_STRING, OTHER_PRODUCT_ID)
+            List<LikeResult> expectedList = List.of(
+                    new LikeResult(USER_ID_STRING, PRODUCT_ID),
+                    new LikeResult(USER_ID_STRING, OTHER_PRODUCT_ID)
             );
 
             // act
-            List<LikeInfo> result = likeUseCase.getLikedProducts(USER_ID);
+            List<LikeResult> result = likeFacade.getLikedProducts(USER_ID);
 
             // assert
             assertThat(result).containsExactlyInAnyOrderElementsOf(expectedList);

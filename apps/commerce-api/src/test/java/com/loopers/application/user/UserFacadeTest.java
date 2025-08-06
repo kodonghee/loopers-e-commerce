@@ -22,10 +22,10 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserUseCase 단위 테스트")
-class UserUseCaseTest {
+class UserFacadeTest {
 
     @InjectMocks
-    private UserUseCase userUseCase;
+    private UserFacade userFacade;
 
     @Mock
     private UserRepository userRepository;
@@ -40,7 +40,7 @@ class UserUseCaseTest {
 
     @Nested
     @DisplayName("getUserInfo 메서드 테스트")
-    class GetUserInfoTest {
+    class GetUserResultTest {
         @Test
         @DisplayName("존재하는 사용자 ID로 조회 시, UserInfo 객체를 반환해야 한다.")
         void getUserInfo_shouldReturnUserInfo_whenUserExists() {
@@ -49,7 +49,7 @@ class UserUseCaseTest {
             when(userRepository.find(TEST_USER_ID)).thenReturn(Optional.of(mockUser));
 
             // act
-            UserInfo result = userUseCase.getUserInfo(TEST_USER_ID);
+            UserResult result = userFacade.getUserInfo(TEST_USER_ID);
 
             // assert
             assertThat(result.userId()).isEqualTo(TEST_USER_ID.getUserId());
@@ -66,7 +66,7 @@ class UserUseCaseTest {
 
             // act & assert
             CoreException thrown = assertThrows(CoreException.class,
-                    () -> userUseCase.getUserInfo(TEST_USER_ID));
+                    () -> userFacade.getUserInfo(TEST_USER_ID));
             assertThat(thrown.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
             assertThat(thrown.getMessage()).isEqualTo("해당 ID의 회원이 없습니다.");
         }
@@ -79,7 +79,7 @@ class UserUseCaseTest {
         @DisplayName("새로운 사용자 ID로 가입 시, User 객체를 저장하고 이벤트를 발행해야 한다.")
         void signUp_shouldSaveUserAndPublishEvent_whenUserIsNew() {
             // arrange
-            UserCommand.Create command = new UserCommand.Create(TEST_USER_ID.getUserId(), TEST_GENDER, TEST_BIRTH_DATE, TEST_EMAIL);
+            UserCriteria.Create command = new UserCriteria.Create(TEST_USER_ID.getUserId(), TEST_GENDER, TEST_BIRTH_DATE, TEST_EMAIL);
             User savedUser = new User(TEST_USER_ID.getUserId(), TEST_GENDER, TEST_BIRTH_DATE, TEST_EMAIL);
 
             when(userRepository.existsByUserId(any(UserId.class))).thenReturn(false);
@@ -88,7 +88,7 @@ class UserUseCaseTest {
             ArgumentCaptor<UserSignedUpEvent> eventCaptor = ArgumentCaptor.forClass(UserSignedUpEvent.class);
 
             // act
-            UserInfo result = userUseCase.signUp(command);
+            UserResult result = userFacade.signUp(command);
 
             // assert
             verify(userRepository).existsByUserId(new UserId(command.userId()));
@@ -106,12 +106,12 @@ class UserUseCaseTest {
         @DisplayName("이미 가입된 사용자 ID로 가입 시, CoreException을 던져야 한다.")
         void signUp_shouldThrowException_whenUserExists() {
             // arrange
-            UserCommand.Create command = new UserCommand.Create(TEST_USER_ID.getUserId(), TEST_GENDER, TEST_BIRTH_DATE, TEST_EMAIL);
+            UserCriteria.Create command = new UserCriteria.Create(TEST_USER_ID.getUserId(), TEST_GENDER, TEST_BIRTH_DATE, TEST_EMAIL);
             when(userRepository.existsByUserId(any(UserId.class))).thenReturn(true);
 
             // act & assert
             CoreException thrown = assertThrows(CoreException.class,
-                    () -> userUseCase.signUp(command));
+                    () -> userFacade.signUp(command));
 
             assertThat(thrown.getErrorType()).isEqualTo(ErrorType.CONFLICT);
             assertThat(thrown.getMessage()).isEqualTo("이미 가입된 ID 입니다.");
@@ -124,11 +124,11 @@ class UserUseCaseTest {
         @DisplayName("유효하지 않은 userId 형식으로 가입 시, CoreException을 던져야 한다.")
         void signUp_shouldThrowException_whenUserIdIsInvalid() {
             // arrange
-            UserCommand.Create command = new UserCommand.Create("invalid_id!", TEST_GENDER, TEST_BIRTH_DATE, TEST_EMAIL);
+            UserCriteria.Create command = new UserCriteria.Create("invalid_id!", TEST_GENDER, TEST_BIRTH_DATE, TEST_EMAIL);
 
             // act & assert
             CoreException thrown = assertThrows(CoreException.class,
-                    () -> userUseCase.signUp(command));
+                    () -> userFacade.signUp(command));
 
             assertThat(thrown.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
             assertThat(thrown.getMessage()).isEqualTo("ID는 영문 및 숫자 10자 이내여야 합니다.");
@@ -140,11 +140,11 @@ class UserUseCaseTest {
         @DisplayName("유효하지 않은 email 형식으로 가입 시, CoreException을 던져야 한다.")
         void signUp_shouldThrowException_whenEmailIsInvalid() {
             // arrange
-            UserCommand.Create command = new UserCommand.Create(TEST_USER_ID.getUserId(), TEST_GENDER, TEST_BIRTH_DATE, "invalid-email");
+            UserCriteria.Create command = new UserCriteria.Create(TEST_USER_ID.getUserId(), TEST_GENDER, TEST_BIRTH_DATE, "invalid-email");
 
             // act & assert
             CoreException thrown = assertThrows(CoreException.class,
-                    () -> userUseCase.signUp(command));
+                    () -> userFacade.signUp(command));
 
             assertThat(thrown.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
             assertThat(thrown.getMessage()).isEqualTo("이메일은 xx@yy.zz 형식에 맞아야 합니다.");
@@ -156,11 +156,11 @@ class UserUseCaseTest {
         @DisplayName("유효하지 않은 birthDate 형식으로 가입 시, CoreException을 던져야 한다.")
         void signUp_shouldThrowException_whenBirthDateIsInvalid() {
             // arrange
-            UserCommand.Create command = new UserCommand.Create(TEST_USER_ID.getUserId(), TEST_GENDER, "1990/01/01", TEST_EMAIL);
+            UserCriteria.Create command = new UserCriteria.Create(TEST_USER_ID.getUserId(), TEST_GENDER, "1990/01/01", TEST_EMAIL);
 
             // act & assert
             CoreException thrown = assertThrows(CoreException.class,
-                    () -> userUseCase.signUp(command));
+                    () -> userFacade.signUp(command));
 
             assertThat(thrown.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
             assertThat(thrown.getMessage()).isEqualTo("생년월일은 yyyy-MM-dd 형식에 맞아야 합니다.");

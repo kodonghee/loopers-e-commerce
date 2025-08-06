@@ -10,21 +10,21 @@ import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
-public class UserUseCase {
+public class UserFacade {
 
     private final UserRepository userRepository;
 
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
-    public UserInfo getUserInfo(UserId userId) {
+    public UserResult getUserInfo(UserId userId) {
         return userRepository.find(userId)
-                .map(UserInfo::from)
+                .map(UserResult::from)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "해당 ID의 회원이 없습니다."));
     }
 
     @Transactional
-    public UserInfo signUp(UserCommand.Create command) {
+    public UserResult signUp(UserCriteria.Create command) {
 
         if (userRepository.existsByUserId(new UserId(command.userId()))) {
             throw new CoreException(ErrorType.CONFLICT, "이미 가입된 ID 입니다.");
@@ -40,6 +40,6 @@ public class UserUseCase {
         User saved = userRepository.save(user);
         eventPublisher.publishEvent(new UserSignedUpEvent(new UserId(saved.getUserId())));
 
-        return UserInfo.from(saved);
+        return UserResult.from(saved);
     }
 }

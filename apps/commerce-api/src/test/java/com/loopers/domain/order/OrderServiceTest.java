@@ -25,11 +25,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class OrderDomainServiceTest {
+class OrderServiceTest {
 
     private ProductRepository productRepository;
     private PointRepository pointRepository;
-    private OrderDomainService orderDomainService;
+    private OrderService orderService;
 
     private static class FakeProductRepository implements ProductRepository {
         private final Map<Long, Product> products = new HashMap<>();
@@ -89,7 +89,7 @@ class OrderDomainServiceTest {
     void setUp() {
         productRepository = new FakeProductRepository();
         pointRepository = new FakePointRepository();
-        orderDomainService = new OrderDomainService(productRepository, pointRepository);
+        orderService = new OrderService(productRepository, pointRepository);
     }
 
     @Nested
@@ -123,7 +123,7 @@ class OrderDomainServiceTest {
             );
 
             // Act
-            Order createdOrder = orderDomainService.createOrder(userId, items);
+            Order createdOrder = orderService.createOrder(userId, items);
 
             // Assert
             assertThat(createdOrder.getUserId()).isEqualTo(userId);
@@ -143,7 +143,7 @@ class OrderDomainServiceTest {
 
             // Act & Assert
             CoreException exception = assertThrows(CoreException.class, () ->
-                    orderDomainService.createOrder(userId, items)
+                    orderService.createOrder(userId, items)
             );
             assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
         }
@@ -159,7 +159,7 @@ class OrderDomainServiceTest {
 
             // Act & Assert (실행 및 검증)
             CoreException exception = assertThrows(CoreException.class, () ->
-                    orderDomainService.createOrder(userId, items)
+                    orderService.createOrder(userId, items)
             );
             assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
         }
@@ -175,7 +175,7 @@ class OrderDomainServiceTest {
 
             // Act & Assert (실행 및 검증)
             CoreException exception = assertThrows(CoreException.class, () ->
-                    orderDomainService.createOrder(userId, items)
+                    orderService.createOrder(userId, items)
             );
             assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
         }
@@ -193,7 +193,7 @@ class OrderDomainServiceTest {
 
             // Act & Assert (실행 및 검증)
             CoreException exception = assertThrows(CoreException.class, () ->
-                    orderDomainService.createOrder(nonExistentUserId, items)
+                    orderService.createOrder(nonExistentUserId, items)
             );
             assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
         }

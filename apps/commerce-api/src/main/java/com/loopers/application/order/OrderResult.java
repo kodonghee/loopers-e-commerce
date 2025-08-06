@@ -3,11 +3,11 @@ package com.loopers.application.order;
 import java.math.BigDecimal;
 import java.util.List;
 
-public record OrderInfo(
+public record OrderResult(
         Long orderId,
         String userId,
         BigDecimal totalAmount,
-        List<OrderItemInfo> items
+        List<OrderItemResult> items
 ) {
-    public record OrderItemInfo(Long productId, int quantity, BigDecimal price) {}
+    public record OrderItemResult(Long productId, int quantity, BigDecimal price) {}
 }

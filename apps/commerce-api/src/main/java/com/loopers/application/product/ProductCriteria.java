@@ -2,7 +2,7 @@ package com.loopers.application.product;
 
 import java.math.BigDecimal;
 
-public record ProductCommand(
+public record ProductCriteria(
         String name,
         int stockValue,
         BigDecimal priceValue,

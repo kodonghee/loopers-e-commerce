@@ -25,9 +25,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @SpringBootTest
-class UserUseCaseIntegrationTest {
+class UserFacadeIntegrationTest {
     @Autowired
-    private UserUseCase userUseCase;
+    private UserFacade userFacade;
 
     @Autowired
     private UserRepository userRepository;
@@ -51,7 +51,7 @@ class UserUseCaseIntegrationTest {
         void saveUser_whenSignUp() {
             // arrange
             String userId = "gdh5866";
-            UserCommand.Create command = new UserCommand.Create(
+            UserCriteria.Create command = new UserCriteria.Create(
                     userId,
                     Gender.F,
                     "1995-06-11",
@@ -59,7 +59,7 @@ class UserUseCaseIntegrationTest {
             );
 
             // act
-            userUseCase.signUp(command);
+            userFacade.signUp(command);
 
             // assert
             verify(userJpaRepository, times(1)).save(any(User.class));
@@ -75,7 +75,7 @@ class UserUseCaseIntegrationTest {
             // arrange
             String sameId = "gdh5866";
 
-            UserCommand.Create firstCommand = new UserCommand.Create(
+            UserCriteria.Create firstCommand = new UserCriteria.Create(
                     sameId,
                     Gender.F,
                     "1995-06-11",
@@ -83,10 +83,10 @@ class UserUseCaseIntegrationTest {
             );
 
             // 사전 저장
-            userUseCase.signUp(firstCommand);
+            userFacade.signUp(firstCommand);
 
             // ID만 같고, 나머지 요소는 다른 두 번째 요청 (ID 중복 시 실패 한다는 것을 더 정확하게 테스트하기 위함)
-            UserCommand.Create secondCommand = new UserCommand.Create (
+            UserCriteria.Create secondCommand = new UserCriteria.Create (
                     sameId,
                     Gender.M,
                     "2000-01-01",
@@ -95,7 +95,7 @@ class UserUseCaseIntegrationTest {
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                userUseCase.signUp(secondCommand);
+                userFacade.signUp(secondCommand);
             });
 
             // assert
@@ -120,14 +120,14 @@ class UserUseCaseIntegrationTest {
             userRepository.save(user);
 
             // act
-            UserInfo userInfo = userUseCase.getUserInfo(new UserId(userId));
+            UserResult userResult = userFacade.getUserInfo(new UserId(userId));
 
             // assert
-            assertThat(userInfo).isNotNull();
-            assertThat(userInfo.userId()).isEqualTo(userId);
-            assertThat(userInfo.gender()).isEqualTo(gender.name());
-            assertThat(userInfo.birthDate()).isEqualTo(birthDate);
-            assertThat(userInfo.email()).isEqualTo(email);
+            assertThat(userResult).isNotNull();
+            assertThat(userResult.userId()).isEqualTo(userId);
+            assertThat(userResult.gender()).isEqualTo(gender.name());
+            assertThat(userResult.birthDate()).isEqualTo(birthDate);
+            assertThat(userResult.email()).isEqualTo(email);
         }
 
 
@@ -139,7 +139,7 @@ class UserUseCaseIntegrationTest {
 
             // acT
             CoreException result = assertThrows(CoreException.class, () -> {
-                userUseCase.getUserInfo(new UserId(unSavedId));
+                userFacade.getUserInfo(new UserId(unSavedId));
             });
 
             // assert

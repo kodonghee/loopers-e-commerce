@@ -1,9 +1,9 @@
 package com.loopers.application.order;
 
-import com.loopers.application.order.OrderCommand.OrderItem;
+import com.loopers.application.order.OrderCriteria.OrderLine;
 import com.loopers.application.order.port.OrderEventSender;
 import com.loopers.domain.order.Order;
-import com.loopers.domain.order.OrderDomainService;
+import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.OrderRepository;
 import com.loopers.domain.user.UserId;
 import org.junit.jupiter.api.DisplayName;
@@ -28,14 +28,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class OrderUseCaseTest {
+class OrderFacadeTest {
 
     @InjectMocks
-    private OrderUseCase orderUseCase;
+    private OrderFacade orderFacade;
     @Mock
     private OrderRepository orderRepository;
     @Mock
-    private OrderDomainService orderService;
+    private OrderService orderService;
     @Mock
     private OrderEventSender orderEventSender;
 
@@ -49,10 +49,10 @@ class OrderUseCaseTest {
         @Test
         void placeOrder_shouldSucceed_andReturnOrderId() {
             // arrange
-            OrderCommand command = new OrderCommand(
+            OrderCriteria command = new OrderCriteria(
                     USER_ID,
-                    List.of(new OrderItem(1L, 2, new BigDecimal("1000")),
-                            new OrderItem(2L, 1, new BigDecimal("500")))
+                    List.of(new OrderCriteria.OrderLine(1L, 2, new BigDecimal("1000")),
+                            new OrderCriteria.OrderLine(2L, 1, new BigDecimal("500")))
             );
 
             Order mockOrder = mock(Order.class);
@@ -60,10 +60,10 @@ class OrderUseCaseTest {
             when(orderService.createOrder(eq(USER_ID), any())).thenReturn(mockOrder);
 
             // act
-            Long resultId = orderUseCase.placeOrder(command);
+            OrderResult orderResult = orderFacade.placeOrder(command);
 
             // assert
-            assertThat(resultId).isEqualTo(ORDER_ID);
+            assertThat(orderResult.orderId()).isEqualTo(ORDER_ID);
 
             ArgumentCaptor<List<com.loopers.domain.order.OrderItem>> itemsCaptor = ArgumentCaptor.forClass(List.class);
             verify(orderService).createOrder(eq(USER_ID), itemsCaptor.capture());
@@ -106,7 +106,7 @@ class OrderUseCaseTest {
             when(orderRepository.findAllByUserId(userId)).thenReturn(List.of(mockOrder1, mockOrder2));
 
             // act
-            List<OrderInfo> result = orderUseCase.getOrderList(userId);
+            List<OrderResult> result = orderFacade.getOrderList(userId);
 
             // assert
             assertThat(result).hasSize(2);
@@ -135,7 +135,7 @@ class OrderUseCaseTest {
             when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(mockOrder));
 
             // act
-            OrderInfo result = orderUseCase.getOrderDetail(ORDER_ID);
+            OrderResult result = orderFacade.getOrderDetail(ORDER_ID);
 
             // assert
             assertThat(result.orderId()).isEqualTo(ORDER_ID);
@@ -151,7 +151,7 @@ class OrderUseCaseTest {
             when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.empty());
 
             // act & assert
-            assertThrows(IllegalArgumentException.class, () -> orderUseCase.getOrderDetail(ORDER_ID));
+            assertThrows(IllegalArgumentException.class, () -> orderFacade.getOrderDetail(ORDER_ID));
         }
     }
 }

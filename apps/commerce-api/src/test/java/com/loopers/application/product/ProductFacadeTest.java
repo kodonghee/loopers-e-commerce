@@ -24,10 +24,10 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ProductUseCase 단위 테스트")
-class ProductUseCaseTest {
+class ProductFacadeTest {
 
     @InjectMocks
-    private ProductUseCase productUseCase;
+    private ProductFacade productFacade;
 
     @Mock
     private ProductRepository productRepository;
@@ -51,11 +51,11 @@ class ProductUseCaseTest {
         @DisplayName("상품 생성 요청 시, Product 객체를 생성하고 저장해야 한다.")
         void create_shouldCreateAndSaveProduct() {
             // arrange
-            ProductCommand command = new ProductCommand(PRODUCT_NAME, STOCK_VALUE, PRICE_VALUE, BRAND_ID);
+            ProductCriteria command = new ProductCriteria(PRODUCT_NAME, STOCK_VALUE, PRICE_VALUE, BRAND_ID);
             ArgumentCaptor<Product> productCaptor = ArgumentCaptor.forClass(Product.class);
 
             // act
-            productUseCase.create(command);
+            productFacade.create(command);
 
             // assert
             verify(productRepository).save(productCaptor.capture());
@@ -70,11 +70,11 @@ class ProductUseCaseTest {
         @DisplayName("상품 생성 시 상품명이 null이면 IllegalArgumentException을 던져야 한다.")
         void create_shouldThrowException_whenNameIsNull() {
             // arrange
-            ProductCommand command = new ProductCommand(null, STOCK_VALUE, PRICE_VALUE, BRAND_ID);
+            ProductCriteria command = new ProductCriteria(null, STOCK_VALUE, PRICE_VALUE, BRAND_ID);
 
             // act & assert
             IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
-                    () -> productUseCase.create(command));
+                    () -> productFacade.create(command));
             assertThat(thrown.getMessage()).isEqualTo("상품명은 필수입니다.");
         }
 
@@ -82,11 +82,11 @@ class ProductUseCaseTest {
         @DisplayName("상품 생성 시 상품명이 공백이면 IllegalArgumentException을 던져야 한다.")
         void create_shouldThrowException_whenNameIsBlank() {
             // arrange
-            ProductCommand command = new ProductCommand(" ", STOCK_VALUE, PRICE_VALUE, BRAND_ID);
+            ProductCriteria command = new ProductCriteria(" ", STOCK_VALUE, PRICE_VALUE, BRAND_ID);
 
             // act & assert
             IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
-                    () -> productUseCase.create(command));
+                    () -> productFacade.create(command));
             assertThat(thrown.getMessage()).isEqualTo("상품명은 필수입니다.");
         }
 
@@ -94,11 +94,11 @@ class ProductUseCaseTest {
         @DisplayName("상품 생성 시 brandId가 null이면 IllegalArgumentException을 던져야 한다.")
         void create_shouldThrowException_whenBrandIdIsNull() {
             // arrange
-            ProductCommand command = new ProductCommand(PRODUCT_NAME, STOCK_VALUE, PRICE_VALUE, null);
+            ProductCriteria command = new ProductCriteria(PRODUCT_NAME, STOCK_VALUE, PRICE_VALUE, null);
 
             // act & assert
             IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
-                    () -> productUseCase.create(command));
+                    () -> productFacade.create(command));
             assertThat(thrown.getMessage()).isEqualTo("브랜드 ID는 필수입니다.");
         }
 
@@ -106,11 +106,11 @@ class ProductUseCaseTest {
         @DisplayName("상품 생성 시 brandId가 0 이하이면 IllegalArgumentException을 던져야 한다.")
         void create_shouldThrowException_whenBrandIdIsInvalid() {
             // arrange
-            ProductCommand command = new ProductCommand(PRODUCT_NAME, STOCK_VALUE, PRICE_VALUE, 0L);
+            ProductCriteria command = new ProductCriteria(PRODUCT_NAME, STOCK_VALUE, PRICE_VALUE, 0L);
 
             // act & assert
             IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
-                    () -> productUseCase.create(command));
+                    () -> productFacade.create(command));
             assertThat(thrown.getMessage()).isEqualTo("브랜드 ID는 필수입니다.");
         }
     }
@@ -148,7 +148,7 @@ class ProductUseCaseTest {
             when(likeCountReader.getLikeCountByProductId(mockProduct2.getId())).thenReturn(10);
 
             // act
-            List<ProductInfo> result = productUseCase.getProductList(condition);
+            List<ProductResult> result = productFacade.getProductList(condition);
 
             // assert
             assertThat(result).hasSize(2);
@@ -171,7 +171,7 @@ class ProductUseCaseTest {
             when(productRepository.findAllByCondition(any())).thenReturn(Collections.emptyList());
 
             // act
-            List<ProductInfo> result = productUseCase.getProductList(condition);
+            List<ProductResult> result = productFacade.getProductList(condition);
 
             // assert
             assertThat(result).isEmpty();
@@ -199,7 +199,7 @@ class ProductUseCaseTest {
             when(likeCountReader.getLikeCountByProductId(PRODUCT_ID)).thenReturn(10);
 
             // act
-            ProductInfo result = productUseCase.getProductDetail(PRODUCT_ID);
+            ProductResult result = productFacade.getProductDetail(PRODUCT_ID);
 
             // assert
             assertThat(result.productId()).isEqualTo(PRODUCT_ID);
@@ -218,7 +218,7 @@ class ProductUseCaseTest {
 
             // act & assert
             IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class,
-                    () -> productUseCase.getProductDetail(PRODUCT_ID));
+                    () -> productFacade.getProductDetail(PRODUCT_ID));
 
             assertThat(thrown.getMessage()).isEqualTo("존재하지 않는 상품입니다.");
         }

@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 
 @RequiredArgsConstructor
 @Service
-public class PointUseCase {
+public class PointFacade {
 
     private final PointRepository pointRepository;
 

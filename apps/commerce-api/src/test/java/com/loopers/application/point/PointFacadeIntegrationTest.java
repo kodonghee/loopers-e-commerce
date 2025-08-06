@@ -23,9 +23,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
-class PointUseCaseIntegrationTest {
+class PointFacadeIntegrationTest {
     @Autowired
-    private PointUseCase pointUseCase;
+    private PointFacade pointFacade;
 
     @Autowired
     private PointRepository pointRepository;
@@ -55,7 +55,7 @@ class PointUseCaseIntegrationTest {
             pointRepository.save(new Point(user.getUserId(), BigDecimal.ZERO));
 
             // act
-            BigDecimal point = pointUseCase.getPoints(new UserId(userId));
+            BigDecimal point = pointFacade.getPoints(new UserId(userId));
 
             // assert
             assertThat(point).isNotNull();
@@ -70,7 +70,7 @@ class PointUseCaseIntegrationTest {
             String unSavedId = "somebody";
 
             // act
-            BigDecimal point = pointUseCase.getPoints(new UserId(unSavedId));
+            BigDecimal point = pointFacade.getPoints(new UserId(unSavedId));
 
             // assert
             assertThat(point).isNull();
@@ -89,7 +89,7 @@ class PointUseCaseIntegrationTest {
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                pointUseCase.chargePoints(new UserId(unSavedId), BigDecimal.valueOf(1000));
+                pointFacade.chargePoints(new UserId(unSavedId), BigDecimal.valueOf(1000));
             });
 
             // assert

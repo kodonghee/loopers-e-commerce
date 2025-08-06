@@ -1,8 +1,8 @@
 package com.loopers.interfaces.api.order;
 
-import com.loopers.application.order.OrderCommand;
-import com.loopers.application.order.OrderUseCase;
-import com.loopers.application.order.OrderInfo;
+import com.loopers.application.order.OrderCriteria;
+import com.loopers.application.order.OrderFacade;
+import com.loopers.application.order.OrderResult;
 import com.loopers.domain.user.UserId;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ import java.util.List;
 @RequestMapping("/api/v1/orders")
 public class OrderV1Controller implements OrderV1ApiSpec {
 
-    private final OrderUseCase orderUseCase;
+    private final OrderFacade orderFacade;
 
     @PostMapping
     @Override
@@ -23,14 +23,14 @@ public class OrderV1Controller implements OrderV1ApiSpec {
             @RequestHeader("X-USER-ID") UserId userId,
             @RequestBody OrderV1Dto.OrderItemRequestList request
     ) {
-        OrderCommand command = new OrderCommand(
+        OrderCriteria command = new OrderCriteria(
                 userId.getUserId(),
                 request.getItems().stream()
-                        .map(i -> new OrderCommand.OrderItem(i.productId(), i.quantity(), i.price()))
+                        .map(i -> new OrderCriteria.OrderLine(i.productId(), i.quantity(), i.price()))
                         .toList()
         );
-        Long id = orderUseCase.placeOrder(command);
-        return ApiResponse.success(id);
+        OrderResult orderResult = orderFacade.placeOrder(command);
+        return ApiResponse.success(OrderV1Dto.OrderResponse.from(orderResult).orderId());
     }
 
     @GetMapping
@@ -38,7 +38,7 @@ public class OrderV1Controller implements OrderV1ApiSpec {
     public ApiResponse<List<OrderV1Dto.OrderResponse>> getOrders(
             @RequestHeader("X-USER-ID") UserId userId
     ) {
-        List<OrderInfo> orders = orderUseCase.getOrderList(userId);
+        List<OrderResult> orders = orderFacade.getOrderList(userId);
         return ApiResponse.success(orders.stream()
                 .map(OrderV1Dto.OrderResponse::from).toList());
     }
@@ -48,7 +48,7 @@ public class OrderV1Controller implements OrderV1ApiSpec {
     public ApiResponse<OrderV1Dto.OrderResponse> getOrderDetail(
             @PathVariable("orderId") Long orderId
     ) {
-        OrderInfo info = orderUseCase.getOrderDetail(orderId);
+        OrderResult info = orderFacade.getOrderDetail(orderId);
         return ApiResponse.success(OrderV1Dto.OrderResponse.from(info));
     }
 }

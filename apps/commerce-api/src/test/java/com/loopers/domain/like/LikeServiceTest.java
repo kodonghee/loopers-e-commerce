@@ -19,10 +19,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("LikeDomainService 단위 테스트")
-class LikeDomainServiceTest {
+class LikeServiceTest {
 
     private LikeRepository likeRepository;
-    private LikeDomainService likeDomainService;
+    private LikeService likeService;
 
     private static class FakeLikeRepository implements LikeRepository {
         private final Map<String, Like> likes = new HashMap<>();
@@ -63,7 +63,7 @@ class LikeDomainServiceTest {
     @BeforeEach
     void setUp() {
         likeRepository = new FakeLikeRepository();
-        likeDomainService = new LikeDomainService(likeRepository);
+        likeService = new LikeService(likeRepository);
     }
 
     @Nested
@@ -78,7 +78,7 @@ class LikeDomainServiceTest {
             Long productId = 1L;
 
             // Act
-            likeDomainService.addLike(userId, productId);
+            likeService.addLike(userId, productId);
 
             // Assert
             assertTrue(likeRepository.findByUserIdAndProductId(userId, productId).isPresent());
@@ -90,10 +90,10 @@ class LikeDomainServiceTest {
             // Arrange
             UserId userId = new UserId("user1");
             Long productId = 1L;
-            likeDomainService.addLike(userId, productId); // 첫 번째 좋아요 등록
+            likeService.addLike(userId, productId); // 첫 번째 좋아요 등록
 
             // Act
-            likeDomainService.addLike(userId, productId); // 중복 좋아요 시도
+            likeService.addLike(userId, productId); // 중복 좋아요 시도
 
             // Assert
             long likesCount = ((FakeLikeRepository) likeRepository).likes.size();
@@ -111,11 +111,11 @@ class LikeDomainServiceTest {
             // Arrange
             UserId userId = new UserId("user1");
             Long productId = 1L;
-            likeDomainService.addLike(userId, productId);
+            likeService.addLike(userId, productId);
             assertTrue(likeRepository.findByUserIdAndProductId(userId, productId).isPresent());
 
             // Act
-            likeDomainService.removeLike(userId, productId);
+            likeService.removeLike(userId, productId);
 
             // Assert
             assertFalse(likeRepository.findByUserIdAndProductId(userId, productId).isPresent());
@@ -130,7 +130,7 @@ class LikeDomainServiceTest {
             assertFalse(likeRepository.findByUserIdAndProductId(userId, productId).isPresent());
 
             // Act & Assert
-            assertDoesNotThrow(() -> likeDomainService.removeLike(userId, productId));
+            assertDoesNotThrow(() -> likeService.removeLike(userId, productId));
         }
     }
 
@@ -145,13 +145,13 @@ class LikeDomainServiceTest {
             Long productIdA = 1L;
             Long productIdB = 2L;
 
-            likeDomainService.addLike(new UserId("user1"), productIdA);
-            likeDomainService.addLike(new UserId("user2"), productIdA);
-            likeDomainService.addLike(new UserId("user3"), productIdB);
+            likeService.addLike(new UserId("user1"), productIdA);
+            likeService.addLike(new UserId("user2"), productIdA);
+            likeService.addLike(new UserId("user3"), productIdB);
 
             // Act
-            long countA = likeDomainService.getLikesCount(productIdA);
-            long countB = likeDomainService.getLikesCount(productIdB);
+            long countA = likeService.getLikesCount(productIdA);
+            long countB = likeService.getLikesCount(productIdB);
 
             // Assert
             assertThat(countA).isEqualTo(2);

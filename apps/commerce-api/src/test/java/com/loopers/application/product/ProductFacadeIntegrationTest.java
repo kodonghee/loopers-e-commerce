@@ -20,10 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 @DisplayName("ProductUseCase 단위 테스트")
-class ProductUseCaseIntegrationTest {
+class ProductFacadeIntegrationTest {
 
     @Autowired
-    private ProductUseCase productUseCase;
+    private ProductFacade productFacade;
 
     @Autowired
     private ProductRepository productRepository;
@@ -55,17 +55,17 @@ class ProductUseCaseIntegrationTest {
         @DisplayName("조건에 맞는 상품 목록 조회 시, ProductInfo 리스트를 반환 해야 한다.")
         void getProductList_shouldReturnProductInfoList() {
             // arrange
-            ProductCommand command1 = new ProductCommand("cake", 10, new BigDecimal("10000"), 1L);
-            ProductCommand command2 = new ProductCommand("cookie", 20, new BigDecimal("20000"), 2L);
-            Product product1 = productUseCase.create(command1);
+            ProductCriteria command1 = new ProductCriteria("cake", 10, new BigDecimal("10000"), 1L);
+            ProductCriteria command2 = new ProductCriteria("cookie", 20, new BigDecimal("20000"), 2L);
+            Product product1 = productFacade.create(command1);
             assertTrue(productRepository.findById(product1.getId()).isPresent());
-            Product product2 = productUseCase.create(command2);
+            Product product2 = productFacade.create(command2);
             assertTrue(productRepository.findById(product2.getId()).isPresent());
 
             ProductSearchCondition condition = new ProductSearchCondition(null, PRICE_ASC, 1, 10);
 
             // act
-            List<ProductInfo> result = productUseCase.getProductList(condition);
+            List<ProductResult> result = productFacade.getProductList(condition);
             System.out.println("상품 리스트: " + product1 + product2);
             System.out.println("상품 리스트: " + result);
 

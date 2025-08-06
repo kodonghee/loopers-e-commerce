@@ -11,14 +11,14 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Service
-public class ProductUseCase {
+public class ProductFacade {
 
     private final ProductRepository productRepository;
     private final BrandReader brandReader;
     private final LikeCountReader likeCountReader;
 
     @Transactional
-    public Product create(ProductCommand command) {
+    public Product create(ProductCriteria command) {
 
         Product product = new Product(
                 command.name(),
@@ -30,7 +30,7 @@ public class ProductUseCase {
     }
 
     @Transactional(readOnly = true)
-    public List<ProductInfo> getProductList(ProductSearchCondition condition) {
+    public List<ProductResult> getProductList(ProductSearchCondition condition) {
         List<Product> products = productRepository.findAllByCondition(condition);
 
         return products.stream()
@@ -39,14 +39,14 @@ public class ProductUseCase {
     }
 
     @Transactional(readOnly = true)
-    public ProductInfo getProductDetail(Long productId) {
+    public ProductResult getProductDetail(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
 
         String brandName = brandReader.getBrandName(product.getBrandId());
         int likeCount = likeCountReader.getLikeCountByProductId(product.getId());
         // 여기에 productDomainService 두는 것의 장점? 리팩토링 때 반영하기
-        return new ProductInfo(
+        return new ProductResult(
                 product.getId(),
                 product.getName(),
                 product.getStock().getValue(),
@@ -56,8 +56,8 @@ public class ProductUseCase {
         );
     }
 
-    private ProductInfo toInfo(Product p){
-        return new ProductInfo(
+    private ProductResult toInfo(Product p){
+        return new ProductResult(
                 p.getId(),
                 p.getName(),
                 p.getStock().getValue(),
