@@ -11,11 +11,15 @@ import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.UserId;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.loopers.application.order.OrderMapper.fromOrder;
@@ -36,11 +40,19 @@ public class OrderFacade {
         Order order = toOrder(criteria);
 
         // 1. 상품 재고 확인 및 차감
-        for (OrderItem item : order.getOrderItems()) {
-            Product product = productRepository.findById(item.getProductId())
-                    .orElseThrow(() -> new CoreException(ErrorType.BAD_REQUEST));
+        Map<Long, Integer> orderItems = order.getOrderItems().stream()
+                .collect(Collectors.toMap(OrderItem::getProductId, OrderItem::getQuantity, Integer::sum));
 
-            product.decreaseStock(item.getQuantity()); // 재고 유효성 검사 포함
+        List<Product> products = productRepository.findAllById(new ArrayList<>(orderItems.keySet()));
+        Map<Long, Product> productMap = products.stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+
+        for (Map.Entry<Long, Integer> entry : orderItems.entrySet()) {
+            Product product = productMap.get(entry.getKey());
+            if (product == null) {
+                throw new CoreException(ErrorType.BAD_REQUEST);
+            }
+            product.decreaseStock(entry.getValue());
         }
 
         // 2. 포인트 확인 및 차감

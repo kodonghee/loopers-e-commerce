@@ -9,4 +9,5 @@ public interface ProductRepository {
     Product save(Product product);
     List<Product> findAll();
     List<Product> findAllByCondition(ProductSearchCondition condition);
+    List<Product> findAllById(List<Long> ids);
 }

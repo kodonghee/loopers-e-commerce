@@ -63,6 +63,11 @@ class OrderServiceTest {
         public List<Product> findAllByCondition(ProductSearchCondition condition) {
             return List.of();
         }
+
+        @Override
+        public List<Product> findAllById(List<Long> ids) {
+            return null;
+        }
     }
 
     private static class FakePointRepository implements PointRepository {
