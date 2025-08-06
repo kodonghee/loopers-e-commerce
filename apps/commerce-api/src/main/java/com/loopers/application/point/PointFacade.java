@@ -27,14 +27,10 @@ public class PointFacade {
     }
 
     @Transactional
-    public BigDecimal chargePoints(UserId userId, BigDecimal amount) {
-        return pointRepository.find(userId)
-                .map(point -> {
-                    // charge 메서드에 BigDecimal 타입을 전달합니다.
-                    point.charge(amount);
-                    return point.getPointValue();
-                })
+    public void chargePoints(UserId userId, BigDecimal amount) {
+        Point point = pointRepository.find(userId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "해당 ID의 회원이 없습니다."));
+        point.charge(amount);
     }
 
     @EventListener

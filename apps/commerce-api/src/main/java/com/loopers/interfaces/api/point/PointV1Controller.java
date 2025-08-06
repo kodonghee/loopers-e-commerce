@@ -36,7 +36,8 @@ public class PointV1Controller implements PointV1ApiSpec {
             @UserIdParam UserId userId,
             @RequestBody PointV1Dto.PointChargeRequest request
     ) {
-        BigDecimal points = pointFacade.chargePoints(userId, request.amount());
+        pointFacade.chargePoints(userId, request.amount());
+        BigDecimal points = pointFacade.getPoints(userId);
         return ApiResponse.success(PointV1Dto.PointResponse.from(points));
     }
 }

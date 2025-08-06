@@ -83,7 +83,8 @@ class PointFacadeTest {
             when(pointRepository.find(USER_ID)).thenReturn(Optional.of(existingPoint));
 
             // act
-            BigDecimal result = pointFacade.chargePoints(USER_ID, CHARGE_AMOUNT);
+            pointFacade.chargePoints(USER_ID, CHARGE_AMOUNT);
+            BigDecimal result = pointFacade.getPoints(USER_ID);
 
             // assert
             BigDecimal expectedBalance = INITIAL_AMOUNT.add(CHARGE_AMOUNT);
