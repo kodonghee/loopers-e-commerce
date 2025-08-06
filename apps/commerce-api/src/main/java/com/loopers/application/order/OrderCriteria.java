@@ -5,7 +5,8 @@ import java.util.List;
 
 public record OrderCriteria(
         String userId,
-        List<OrderLine> items
+        List<OrderLine> items,
+        Long couponId
 ) {
     public record OrderLine(Long productId, int quantity, BigDecimal price) {}
 }

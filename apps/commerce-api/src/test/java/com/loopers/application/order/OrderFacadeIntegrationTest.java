@@ -1,11 +1,16 @@
 package com.loopers.application.order;
 
-import com.loopers.application.order.OrderCriteria.OrderLine;
 import com.loopers.application.order.port.OrderEventSender;
+import com.loopers.application.product.ProductMapper;
+import com.loopers.application.product.ProductFacade;
 import com.loopers.domain.order.Order;
-import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.OrderRepository;
+import com.loopers.domain.product.Money;
+import com.loopers.domain.product.Product;
+import com.loopers.domain.product.Stock;
 import com.loopers.domain.user.UserId;
+import com.loopers.utils.DatabaseCleanUp;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,6 +19,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -27,37 +36,39 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
-class OrderFacadeTest {
+@SpringBootTest
+class OrderFacadeIntegrationTest {
 
-    @InjectMocks
+    @Autowired
     private OrderFacade orderFacade;
-    @Mock
+    @Autowired
+    private ProductFacade productFacade;
+    @Autowired
     private OrderRepository orderRepository;
-    @Mock
-    private OrderService orderService;
-    @Mock
+    @MockitoSpyBean
     private OrderEventSender orderEventSender;
+    @Autowired
+    private DatabaseCleanUp databaseCleanUp;
+
+    @AfterEach
+    void tearDown() {
+        databaseCleanUp.truncateAllTables();
+    }
 
     private static final String USER_ID = "user1";
     private static final Long ORDER_ID = 1L;
+    private static final Product PRODUCT = new Product("스니커즈", new Stock(10), new Money(new BigDecimal("100000")), 1L);
 
-    @DisplayName("placeOrder 메서드 테스트")
+    @DisplayName("주문 생성 통합 테스트")
     @Nested
     class PlaceOrderTest {
-        @DisplayName("정상적인 주문 생성 요청 시, 주문을 성공적으로 처리하고 Order ID를 반환한다.")
+        @DisplayName("정상적인 주문 생성 요청 시, 주문을 성공적으로 처리한다.")
         @Test
-        void placeOrder_shouldSucceed_andReturnOrderId() {
+        @Transactional
+        void placeOrderSuccessfully_whenAllConditionsMet() {
             // arrange
-            OrderCriteria command = new OrderCriteria(
-                    USER_ID,
-                    List.of(new OrderCriteria.OrderLine(1L, 2, new BigDecimal("1000")),
-                            new OrderCriteria.OrderLine(2L, 1, new BigDecimal("500")))
-            );
+            Product product = productFacade.create(ProductMapper.fromProduct(PRODUCT));
 
-            Order mockOrder = mock(Order.class);
-            when(mockOrder.getId()).thenReturn(ORDER_ID);
-            when(orderService.createOrder(eq(USER_ID), any())).thenReturn(mockOrder);
 
             // act
             OrderResult orderResult = orderFacade.placeOrder(command);
@@ -80,6 +91,24 @@ class OrderFacadeTest {
             verify(orderRepository).save(mockOrder);
 
             verify(orderEventSender).send(ORDER_ID);
+        }
+
+        @DisplayName("재고 부족으로 주문 실패 시, 포인트 차감이나 쿠폰 사용이 없어야 한다.")
+        @Test
+        void shouldRollbackAll_whenStockIsInsufficient() {
+
+        }
+
+        @DisplayName("포인트 부족으로 주문 실패 시, 재고 차감이나 쿠폰 사용이 없어야 한다.")
+        @Test
+        void shouldRollbackAll_whenPointIsInsufficient() {
+
+        }
+
+        @DisplayName("잘못된 쿠폰 사용 시, 전체 주문이 실패한다.")
+        @Test
+        void shouldRollbackAll_whenCouponInvalid() {
+
         }
     }
 

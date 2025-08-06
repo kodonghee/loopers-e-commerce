@@ -1,6 +1,8 @@
 package com.loopers.application.order;
 
 import com.loopers.application.order.port.OrderEventSender;
+import com.loopers.domain.coupon.Coupon;
+import com.loopers.domain.coupon.CouponRepository;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderRepository;
@@ -11,11 +13,11 @@ import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.UserId;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +34,7 @@ public class OrderFacade {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final PointRepository pointRepository;
-    private final OrderEventSender orderEventSender;
+    private final CouponRepository couponRepository;
 
     @Transactional
     public OrderResult placeOrder(OrderCriteria criteria) {
@@ -55,13 +57,21 @@ public class OrderFacade {
             product.decreaseStock(entry.getValue());
         }
 
-        // 2. 포인트 확인 및 차감
+        // 2. 쿠폰 적용 및 차감
+        BigDecimal orderTotAmount = order.getTotalAmount();
+        if (criteria.couponId() != null) {
+            Coupon coupon = couponRepository.findById(criteria.couponId())
+                    .orElseThrow(() -> new CoreException(ErrorType.BAD_REQUEST));
+
+            coupon.checkOwner(order.getUserId());
+            orderTotAmount = coupon.applyCoupon(orderTotAmount);
+            coupon.markAsUsed();
+        }
+
+        // 3. 포인트 확인 및 차감
         Point point = pointRepository.find(new UserId(order.getUserId()))
                 .orElseThrow(() -> new CoreException(ErrorType.BAD_REQUEST));
-        point.use(order.getTotalAmount()); // 포인트 유효성 검사 포함
-
-        // 3. 주문 정보 외부 시스템 전송
-        orderEventSender.send(order.getOrderId());
+        point.use(orderTotAmount); // 포인트 유효성 검사 포함
 
         // 4. 주문 저장
         orderRepository.save(order);

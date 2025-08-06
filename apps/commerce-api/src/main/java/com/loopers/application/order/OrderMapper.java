@@ -2,7 +2,6 @@ package com.loopers.application.order;
 
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
-import com.loopers.domain.order.OrderRepository;
 
 import java.util.List;
 

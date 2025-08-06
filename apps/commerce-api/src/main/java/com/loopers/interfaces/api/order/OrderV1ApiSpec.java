@@ -15,7 +15,7 @@ public interface OrderV1ApiSpec {
     @PostMapping("/orders")
     ApiResponse<Long> placeOrder(
             @RequestHeader("X-USER-ID") UserId userId,
-            @RequestBody OrderV1Dto.OrderItemRequestList request
+            @RequestBody OrderV1Dto.PlaceOrderRequest request
     );
 
     @Operation(summary = "유저의 주문 목록 조회")

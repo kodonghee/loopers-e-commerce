@@ -27,6 +27,8 @@ public class Coupon {
     protected Coupon() {}
 
     public Coupon(String userId, CouponType type, BigDecimal amount) {
+        validateUserId(userId);
+        validateCouponAmount(amount);
         this.userId = userId;
         this.type = type;
         this.amount = amount;
@@ -41,6 +43,11 @@ public class Coupon {
 
     public BigDecimal getAmount() { return amount; }
 
+    public void checkOwner(String requestUserId) {
+        if (!this.userId.equals(requestUserId)) {
+            throw new IllegalArgumentException("쿠폰 소유자가 아닙니다.");
+        }
+    }
     public BigDecimal applyCoupon(BigDecimal totalAmount) {
         if (used) {
             throw new IllegalStateException("이미 사용된 쿠폰입니다.");
@@ -60,5 +67,25 @@ public class Coupon {
         }
 
         this.used = true;
+    }
+
+    // =============================
+    // 🔒 Validation methods
+    // =============================
+
+    private void validateUserId(String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("ID는 빈 값이 될 수 없습니다.");
+        }
+
+        if (!userId.matches("^[a-zA-Z0-9]{1,10}$")) {
+            throw new IllegalArgumentException("ID는 영문 및 숫자 10자 이내여야 합니다.");
+        }
+    }
+
+    private void validateCouponAmount(BigDecimal couponAmount) {
+        if (couponAmount == null || couponAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("쿠폰 금액은 0보다 커야 합니다.");
+        }
     }
 }

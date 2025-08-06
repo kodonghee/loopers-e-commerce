@@ -29,12 +29,15 @@ public class OrderV1Dto {
         }
     }
 
-    public class OrderItemRequestList {
+    public class PlaceOrderRequest {
         private List<OrderItemRequest> items;
+        private Long couponId;
 
         public List<OrderItemRequest> getItems() {
             return items;
         }
+
+        public Long getCouponId() { return couponId; }
 
         public record OrderItemRequest(Long productId, int quantity, BigDecimal price) {}
 

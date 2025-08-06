@@ -3,6 +3,7 @@ package com.loopers.interfaces.api.order;
 import com.loopers.application.order.OrderCriteria;
 import com.loopers.application.order.OrderFacade;
 import com.loopers.application.order.OrderResult;
+import com.loopers.application.order.port.OrderEventSender;
 import com.loopers.domain.user.UserId;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -16,20 +17,23 @@ import java.util.List;
 public class OrderV1Controller implements OrderV1ApiSpec {
 
     private final OrderFacade orderFacade;
+    private final OrderEventSender orderEventSender;
 
     @PostMapping
     @Override
     public ApiResponse<Long> placeOrder(
             @RequestHeader("X-USER-ID") UserId userId,
-            @RequestBody OrderV1Dto.OrderItemRequestList request
+            @RequestBody OrderV1Dto.PlaceOrderRequest request
     ) {
-        OrderCriteria command = new OrderCriteria(
+        OrderCriteria criteria = new OrderCriteria(
                 userId.getUserId(),
                 request.getItems().stream()
                         .map(i -> new OrderCriteria.OrderLine(i.productId(), i.quantity(), i.price()))
-                        .toList()
+                        .toList(),
+                request.getCouponId()
         );
-        OrderResult orderResult = orderFacade.placeOrder(command);
+        OrderResult orderResult = orderFacade.placeOrder(criteria);
+        orderEventSender.send(orderResult.orderId());
         return ApiResponse.success(OrderV1Dto.OrderResponse.from(orderResult).orderId());
     }
 
