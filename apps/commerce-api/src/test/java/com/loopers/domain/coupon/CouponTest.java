@@ -2,6 +2,8 @@ package com.loopers.domain.coupon;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.math.BigDecimal;
 
@@ -47,5 +49,66 @@ class CouponTest {
         assertThatThrownBy(coupon::markAsUsed)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("이미 사용된 쿠폰입니다.");
+    }
+
+    @DisplayName("주문 금액에 정액 쿠폰을 적용하면 해당 금액만큼 할인된다.")
+    @Test
+    void fixedCouponAppliesCorrectly() {
+        // arrange
+        Coupon coupon = new Coupon("cookie95", CouponType.FIXED, new BigDecimal("10000"));
+        BigDecimal orderAmount = new BigDecimal("30000");
+
+        // act
+        BigDecimal discountedAmount = coupon.applyCoupon(orderAmount);
+
+        // assert
+        assertThat(discountedAmount).isEqualByComparingTo("20000");
+    }
+
+    @DisplayName("주문 금액에 정률 쿠폰을 적용하면 해당 금액만큼 할인된다.")
+    @Test
+    void rateCouponAppliesCorrectly() {
+        // arrange
+        Coupon coupon = new Coupon("cookie95", CouponType.RATE, new BigDecimal("10"));
+        BigDecimal orderAmount = new BigDecimal("30000");
+
+        // act
+        BigDecimal discountedAmount = coupon.applyCoupon(orderAmount);
+
+        // assert
+        assertThat(discountedAmount).isEqualByComparingTo("27000");
+    }
+
+    @ParameterizedTest(name = "couponAmount={0}, orderAmount={1} -> 결제 금액은 0원")
+    @CsvSource({
+            "50000, 30000",
+            "1000, 1",
+            "10000, 10000"
+    })
+    @DisplayName("쿠폰 할인 금액이 주문 금액보다 큰 경우, 할인된 최종 결제 금액은 최소 0원이다.")
+    void finalAmountIsMinZero_whenCouponGreaterThanOrderAmount(String couponStr, String orderStr) {
+        // arrange
+        Coupon coupon = new Coupon("cookie95", CouponType.FIXED, new BigDecimal(couponStr));
+        BigDecimal orderAmount = new BigDecimal(orderStr);
+
+        // act
+        BigDecimal discountedAmount = coupon.applyCoupon(orderAmount);
+
+        // assert
+        assertThat(discountedAmount).isEqualByComparingTo("0");
+    }
+
+    @DisplayName("정률 쿠폰의 할인 금액은 소수점 이하를 버림하여 계산한다.")
+    @Test
+    void discountAmountIsRoundedDownToInteger_whenApplyRateCoupon() {
+        // arrange
+        Coupon coupon = new Coupon("cookie95", CouponType.RATE, new BigDecimal("33"));
+        BigDecimal orderAmount = new BigDecimal("3960");
+
+        // act
+        BigDecimal discountedAmount = coupon.applyCoupon(orderAmount); // 3960 - 1306 (3960 * 0.33 -> 버림 처리)
+
+        // assert
+        assertThat(discountedAmount).isEqualByComparingTo("2654");
     }
 }
