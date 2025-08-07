@@ -60,7 +60,7 @@ public class OrderFacade {
         // 2. 쿠폰 적용 및 차감
         BigDecimal orderTotAmount = order.getTotalAmount();
         if (criteria.couponId() != null) {
-            Coupon coupon = couponRepository.findById(criteria.couponId())
+            Coupon coupon = couponRepository.findByIdForUpdate(criteria.couponId())
                     .orElseThrow(() -> new CoreException(ErrorType.BAD_REQUEST));
 
             coupon.checkOwner(order.getUserId());
@@ -82,7 +82,7 @@ public class OrderFacade {
     @Transactional(readOnly = true)
     public List<OrderResult> getOrderList(UserId userId) {
         return orderRepository.findAllByUserId(userId).stream()
-                .map(this::toInfo)
+                .map(OrderMapper::fromOrder)
                 .collect(Collectors.toList());
     }
 
@@ -90,17 +90,6 @@ public class OrderFacade {
     public OrderResult getOrderDetail(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다."));
-        return toInfo(order);
-    }
-
-    private OrderResult toInfo(Order o) { // Mapper에 존재하므로 생략해도 됨
-        return new OrderResult(
-                o.getId(),
-                o.getUserId(),
-                o.getTotalAmount(),
-                o.getOrderItems().stream()
-                        .map(i -> new OrderResult.OrderItemResult(i.getProductId(), i.getQuantity(), i.getPrice()))
-                        .collect(Collectors.toList())
-        );
+        return OrderMapper.fromOrder(order);
     }
 }

@@ -24,7 +24,6 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -82,7 +81,6 @@ class OrderFacadeIntegrationTest {
     class PlaceOrderTest {
         @DisplayName("정상적인 주문 생성 요청 시, 주문을 성공적으로 처리한다.")
         @Test
-        @Transactional
         void placeOrderSuccessfully_whenAllConditionsMet() {
             // arrange
             Product product = productFacade.create(
@@ -278,75 +276,67 @@ class OrderFacadeIntegrationTest {
         }
     }
 
-   /* @DisplayName("getOrderList 메서드 테스트")
     @Nested
-    class GetOrderListTest {
-        @DisplayName("존재하는 유저의 주문 목록을 조회할 경우, 주문 정보 리스트를 반환한다.")
+    @DisplayName("주문 조회 통합 테스트")
+    class GetOrderTest {
+
         @Test
-        void getOrderList_shouldReturnOrderInfoList() {
+        @DisplayName("사용자 ID로 주문 목록을 조회할 수 있다.")
+        void getOrderList_byUserId() {
             // arrange
-            UserId userId = new UserId(USER_ID);
-            Order mockOrder1 = mock(Order.class);
-            when(mockOrder1.getId()).thenReturn(101L);
-            when(mockOrder1.getUserId()).thenReturn(USER_ID);
-            when(mockOrder1.getTotalAmount()).thenReturn(new BigDecimal("10000"));
-            when(mockOrder1.getOrderItems()).thenReturn(List.of(new com.loopers.domain.order.OrderItem(1L, 1, new BigDecimal("10000"))));
+            Product product = productFacade.create(
+                    new ProductCriteria("운동화", 3, new BigDecimal("120000"), brandId)
+            );
 
-            Order mockOrder2 = mock(Order.class);
-            when(mockOrder2.getId()).thenReturn(102L);
-            when(mockOrder2.getUserId()).thenReturn(USER_ID);
-            when(mockOrder2.getTotalAmount()).thenReturn(new BigDecimal("5000"));
-            when(mockOrder2.getOrderItems()).thenReturn(List.of(new com.loopers.domain.order.OrderItem(2L, 1, new BigDecimal("5000"))));
-
-            when(orderRepository.findAllByUserId(userId)).thenReturn(List.of(mockOrder1, mockOrder2));
+            OrderCriteria criteria = new OrderCriteria(
+                    USER_ID,
+                    List.of(new OrderCriteria.OrderLine(product.getId(), 1, product.getPrice().getAmount())),
+                    null
+            );
+            OrderResult createdOrder = orderFacade.placeOrder(criteria);
 
             // act
-            List<OrderResult> result = orderFacade.getOrderList(userId);
+            List<OrderResult> resultList = orderFacade.getOrderList(new UserId(USER_ID));
 
             // assert
-            assertThat(result).hasSize(2);
-            assertThat(result.get(0).orderId()).isEqualTo(101L);
-            assertThat(result.get(0).totalAmount()).isEqualByComparingTo(new BigDecimal("10000"));
-            assertThat(result.get(1).orderId()).isEqualTo(102L);
-            assertThat(result.get(1).totalAmount()).isEqualByComparingTo(new BigDecimal("5000"));
+            assertThat(resultList).hasSize(1);
+
+            OrderResult result = resultList.get(0);
+            assertThat(result.orderId()).isEqualTo(createdOrder.orderId());
+            assertThat(result.userId()).isEqualTo(USER_ID);
+            assertThat(result.totalAmount()).isEqualByComparingTo(new BigDecimal("120000"));
+            assertThat(result.items()).hasSize(1);
+            assertThat(result.items().get(0).productId()).isEqualTo(product.getId());
+            assertThat(result.items().get(0).quantity()).isEqualTo(1);
+            assertThat(result.items().get(0).price()).isEqualByComparingTo(new BigDecimal("120000"));
+        }
+
+        @Test
+        @DisplayName("주문 ID로 주문 상세를 조회할 수 있다.")
+        void getOrderDetail_byOrderId() {
+            // arrange
+            Product product = productFacade.create(
+                    new ProductCriteria("런닝화", 5, new BigDecimal("90000"), brandId)
+            );
+
+            OrderCriteria criteria = new OrderCriteria(
+                    USER_ID,
+                    List.of(new OrderCriteria.OrderLine(product.getId(), 2, product.getPrice().getAmount())),
+                    null
+            );
+            OrderResult createdOrder = orderFacade.placeOrder(criteria);
+
+            // act
+            OrderResult result = orderFacade.getOrderDetail(createdOrder.orderId());
+
+            // assert
+            assertThat(result.orderId()).isEqualTo(createdOrder.orderId());
+            assertThat(result.userId()).isEqualTo(USER_ID);
+            assertThat(result.totalAmount()).isEqualByComparingTo(new BigDecimal("180000"));
+            assertThat(result.items()).hasSize(1);
+            assertThat(result.items().get(0).productId()).isEqualTo(product.getId());
+            assertThat(result.items().get(0).quantity()).isEqualTo(2);
+            assertThat(result.items().get(0).price()).isEqualByComparingTo(new BigDecimal("90000"));
         }
     }
-
-    @DisplayName("getOrderDetail 메서드 테스트")
-    @Nested
-    class GetOrderDetailTest {
-        @DisplayName("존재하는 주문 ID로 상세 정보를 조회할 경우, 주문 정보를 반환한다.")
-        @Test
-        void getOrderDetail_shouldReturnOrderInfo() {
-            // arrange
-            Order mockOrder = mock(Order.class);
-            when(mockOrder.getId()).thenReturn(ORDER_ID);
-            when(mockOrder.getUserId()).thenReturn(USER_ID);
-            when(mockOrder.getTotalAmount()).thenReturn(new BigDecimal("2500"));
-            when(mockOrder.getOrderItems()).thenReturn(
-                    List.of(new com.loopers.domain.order.OrderItem(1L, 2, new BigDecimal("1000")),
-                            new com.loopers.domain.order.OrderItem(2L, 1, new BigDecimal("500")))
-            );
-            when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(mockOrder));
-
-            // act
-            OrderResult result = orderFacade.getOrderDetail(ORDER_ID);
-
-            // assert
-            assertThat(result.orderId()).isEqualTo(ORDER_ID);
-            assertThat(result.userId()).isEqualTo(USER_ID);
-            assertThat(result.totalAmount()).isEqualByComparingTo(new BigDecimal("2500"));
-            assertThat(result.items()).hasSize(2);
-        }
-
-        @DisplayName("존재하지 않는 주문 ID로 조회할 경우, 예외를 발생시킨다.")
-        @Test
-        void getOrderDetail_shouldThrowException_whenOrderNotFound() {
-            // arrange
-            when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.empty());
-
-            // act & assert
-            assertThrows(IllegalArgumentException.class, () -> orderFacade.getOrderDetail(ORDER_ID));
-        }
-    }*/
 }

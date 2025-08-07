@@ -9,7 +9,7 @@ public class ProductMapper {
         return new Product(criteria.name(), new Stock(criteria.stockValue()), new Money(criteria.priceValue()), criteria.brandId());
     }
 
-    public static ProductResult fromProduct(Product product, String brandName, int likeCount) {
+    public static ProductResult fromProduct(Product product, String brandName, Long likeCount) {
         return new ProductResult(product.getId(),
                 product.getName(),
                 product.getStock().getValue(),

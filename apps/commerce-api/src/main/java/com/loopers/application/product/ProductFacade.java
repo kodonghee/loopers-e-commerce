@@ -1,7 +1,8 @@
 package com.loopers.application.product;
 
 import com.loopers.domain.brand.BrandReader;
-import com.loopers.domain.like.LikeCountReader;
+import com.loopers.domain.like.ProductLikeSummary;
+import com.loopers.domain.like.ProductLikeSummaryRepository;
 import com.loopers.domain.product.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,7 +16,7 @@ public class ProductFacade {
 
     private final ProductRepository productRepository;
     private final BrandReader brandReader;
-    private final LikeCountReader likeCountReader;
+    private final ProductLikeSummaryRepository productLikeSummaryRepository;
 
     @Transactional
     public Product create(ProductCriteria command) {
@@ -33,9 +34,22 @@ public class ProductFacade {
     public List<ProductResult> getProductList(ProductSearchCondition condition) {
         List<Product> products = productRepository.findAllByCondition(condition);
 
-        return products.stream()
-                .map(this::toInfo)
+        List<ProductResult> results =  products.stream()
+                .map(product -> {
+                    String brandName = brandReader.getBrandName(product.getBrandId());
+                    Long likeCount = productLikeSummaryRepository.findByProductId(product.getId())
+                            .map(ProductLikeSummary::getLikeCount)
+                            .orElse(0L);
+                    return ProductMapper.fromProduct(product, brandName, likeCount);
+                })
                 .toList();
+
+        if (condition.getSortType() == ProductSearchCondition.ProductSortType.LIKES_DESC) {
+            results = results.stream()
+                    .sorted((a, b) -> Long.compare(b.likeCount(), a.likeCount()))
+                    .toList();
+        }
+        return results;
     }
 
     @Transactional(readOnly = true)
@@ -44,26 +58,9 @@ public class ProductFacade {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
 
         String brandName = brandReader.getBrandName(product.getBrandId());
-        int likeCount = likeCountReader.getLikeCountByProductId(product.getId());
-        // 여기에 productDomainService 두는 것의 장점? 리팩토링 때 반영하기
-        return new ProductResult(
-                product.getId(),
-                product.getName(),
-                product.getStock().getValue(),
-                product.getPrice().getAmount(),
-                brandName,
-                likeCount
-        );
-    }
-
-    private ProductResult toInfo(Product p){
-        return new ProductResult(
-                p.getId(),
-                p.getName(),
-                p.getStock().getValue(),
-                p.getPrice().getAmount(),
-                brandReader.getBrandName(p.getBrandId()),
-                likeCountReader.getLikeCountByProductId(p.getId())
-        );
+        Long likeCount = productLikeSummaryRepository.findByProductId(productId)
+                .map(ProductLikeSummary::getLikeCount)
+                .orElse(0L);
+        return ProductMapper.fromProduct(product, brandName, likeCount);
     }
 }

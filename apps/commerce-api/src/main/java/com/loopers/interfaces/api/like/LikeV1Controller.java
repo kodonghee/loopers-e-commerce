@@ -1,5 +1,6 @@
 package com.loopers.interfaces.api.like;
 
+import com.loopers.application.like.LikeCriteria;
 import com.loopers.application.like.LikeFacade;
 import com.loopers.application.like.LikeResult;
 import com.loopers.domain.user.UserId;
@@ -7,6 +8,7 @@ import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import javax.script.ScriptEngine;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -22,7 +24,8 @@ public class LikeV1Controller implements LikeV1ApiSpec {
             @RequestHeader("X-USER-ID") UserId userId,
             @PathVariable("productId") Long productId
     ) {
-        likeFacade.likeProduct(userId, productId);
+        LikeCriteria criteria = new LikeCriteria(userId.getUserId(), productId);
+        likeFacade.likeProduct(criteria);
         return ApiResponse.success();
     }
 
@@ -32,7 +35,8 @@ public class LikeV1Controller implements LikeV1ApiSpec {
             @RequestHeader("X-USER-ID") UserId userId,
             @PathVariable("productId") Long productId
     ) {
-        likeFacade.cancelLikeProduct(userId, productId);
+        LikeCriteria criteria = new LikeCriteria(userId.getUserId(), productId);
+        likeFacade.cancelLikeProduct(criteria);
         return ApiResponse.success();
     }
 

@@ -12,7 +12,7 @@ public class ProductV1Dto {
             Integer stock,
             BigDecimal price,
             String brandName,
-            Integer likeCount
+            Long likeCount
     ) {
         public static ProductResponse from(ProductResult info) {
             return new ProductResponse(

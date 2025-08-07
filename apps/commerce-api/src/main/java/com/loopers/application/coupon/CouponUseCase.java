@@ -23,4 +23,5 @@ public class CouponUseCase {
         couponRepository.save(coupon);
         return coupon.getId();
     }
+
 }
