@@ -108,6 +108,25 @@ class OrderFacadeIntegrationTest {
                     .isEqualByComparingTo(new BigDecimal("150000"));
         }
 
+        @DisplayName("존재하지 않는 상품으로 주문 시도 시, 전체 주문이 실패한다.")
+        @Test
+        void shouldRollback_whenProductDoesNotExist() {
+            Long invalidProductId = 99999L;
+
+            OrderCriteria criteria = new OrderCriteria(
+                    USER_ID,
+                    List.of(new OrderCriteria.OrderLine(invalidProductId, 1, new BigDecimal("100000"))),
+                    null
+            );
+
+            Throwable thrown = catchThrowable(() -> orderFacade.placeOrder(criteria));
+
+            assertThat(thrown).isInstanceOf(CoreException.class);
+            assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())
+                    .isEqualByComparingTo(new BigDecimal("300000"));
+            assertThat(orderRepository.findAllByUserId(new UserId(USER_ID))).isEmpty();
+        }
+
         @DisplayName("재고 부족으로 주문 실패 시, 포인트 차감이나 쿠폰 사용이 없어야 한다.")
         @Test
         void shouldRollbackAll_whenStockIsInsufficient() {
