@@ -69,7 +69,7 @@ public class OrderFacade {
         }
 
         // 3. 포인트 확인 및 차감
-        Point point = pointRepository.find(new UserId(order.getUserId()))
+        Point point = pointRepository.findByUserIdForUpdate(order.getUserId())
                 .orElseThrow(() -> new CoreException(ErrorType.BAD_REQUEST));
         point.use(orderTotAmount); // 포인트 유효성 검사 포함
 

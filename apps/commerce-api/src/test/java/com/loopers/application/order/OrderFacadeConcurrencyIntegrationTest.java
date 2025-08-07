@@ -14,6 +14,7 @@ import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.infrastructure.order.OrderJpaRepository;
+import com.loopers.infrastructure.point.PointJpaRepository;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,7 +42,7 @@ class OrderFacadeConcurrencyIntegrationTest {
     @Autowired
     private UserRepository userRepository;
     @Autowired
-    private PointRepository pointRepository;
+    private PointJpaRepository pointJpaRepository;
     @Autowired
     private OrderJpaRepository orderJpaRepository;
     @Autowired
@@ -56,7 +58,7 @@ class OrderFacadeConcurrencyIntegrationTest {
         User user = new User(USER_ID, Gender.F, "1995-06-11", "test@naver.com");
         userRepository.save(user);
 
-        pointRepository.save(new Point(USER_ID, new BigDecimal("300000")));
+        pointJpaRepository.save(new Point(USER_ID, new BigDecimal("300000")));
 
         Brand brand = brandJpaRepository.save(new Brand("Nike"));
         this.brandId = brand.getId();
@@ -104,8 +106,35 @@ class OrderFacadeConcurrencyIntegrationTest {
 
     @DisplayName("동일한 유저가 서로 다른 주문을 동시에 수행해도, 포인트가 정상적으로 차감되어야 한다.")
     @Test
-    void likeDecreaseCorrectly_whenConcurrentRequests() throws Exception {
+    void shouldDecreasePointCorrectly_whenConcurrentRequests() throws Exception {
+        Product p1 = productFacade.create(new ProductCriteria("A", 10, new BigDecimal("100000"), brandId));
+        Product p2 = productFacade.create(new ProductCriteria("B", 10, new BigDecimal("100000"), brandId));
 
+        List<OrderCriteria> payloads = List.of(
+                new OrderCriteria(USER_ID, List.of(new OrderCriteria.OrderLine(p1.getId(), 1, p1.getPrice().getAmount())), null),
+                new OrderCriteria(USER_ID, List.of(new OrderCriteria.OrderLine(p2.getId(), 1, p2.getPrice().getAmount())), null)
+        );
+
+        int threadCount = 10;
+        ExecutorService es = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            OrderCriteria c = payloads.get(i % payloads.size());
+            es.submit(() -> {
+                try { orderFacade.placeOrder(c); } catch (Exception ignored) {}
+                finally { latch.countDown(); }
+            });
+        }
+
+        latch.await(10, TimeUnit.SECONDS);
+
+        Long successOrders = orderJpaRepository.count();
+
+        BigDecimal expectedRemain = new BigDecimal("300000").subtract(new BigDecimal("100000").multiply(new BigDecimal(successOrders)));
+
+        BigDecimal actualRemain = pointJpaRepository.findByUserId(USER_ID).orElseThrow().getPointValue();
+        assertThat(actualRemain).isEqualByComparingTo(expectedRemain);
     }
 
     @DisplayName("좋아요와 싫어요가 섞여도 최종 좋아요 수가 정확하다.")
