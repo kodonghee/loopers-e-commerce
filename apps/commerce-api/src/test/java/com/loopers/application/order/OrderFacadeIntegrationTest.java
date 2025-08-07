@@ -68,7 +68,7 @@ class OrderFacadeIntegrationTest {
 
         pointRepository.save(new Point(USER_ID, new BigDecimal("300000")));
 
-        Brand brand = brandJpaRepository.save(new Brand("Paris Baguette"));
+        Brand brand = brandJpaRepository.save(new Brand("Nike"));
         this.brandId = brand.getId();
     }
 
@@ -222,6 +222,41 @@ class OrderFacadeIntegrationTest {
             assertThat(orderRepository.findAllByUserId(new UserId(USER_ID))).isEmpty();
         }
 
+        @DisplayName("이미 사용한 쿠폰을 사용할 경우, 전체 주문이 실패한다.")
+        @Test
+        void shouldRollbackAll_whenCouponAlreadyUsed() {
+            // arrange
+            Product product = productFacade.create(
+                    new ProductCriteria("후드티", 5, new BigDecimal("100000"), brandId)
+            );
+            Long userCouponId = couponUseCase.createCoupon(
+                    new CouponCriteria(USER_ID, CouponType.FIXED, new BigDecimal("50000"))
+            );
+
+            OrderCriteria firstOrder = new OrderCriteria(
+                    USER_ID,
+                    List.of(new OrderCriteria.OrderLine(product.getId(), 1, product.getPrice().getAmount())),
+                    userCouponId
+            );
+            orderFacade.placeOrder(firstOrder);
+
+            OrderCriteria secondOrder = new OrderCriteria(
+                    USER_ID,
+                    List.of(new OrderCriteria.OrderLine(product.getId(), 1, product.getPrice().getAmount())),
+                    userCouponId
+            );
+
+            // act
+            Throwable thrown = catchThrowable(() -> orderFacade.placeOrder(secondOrder));
+
+            // assert
+            assertThat(thrown).isInstanceOf(IllegalStateException.class);
+            assertThat(couponRepository.findById(userCouponId).get().isUsed()).isTrue();
+            assertThat(productRepository.findById(product.getId()).get().getStock().getValue()).isEqualTo(4);
+            assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())
+                    .isEqualByComparingTo(new BigDecimal("250000"));
+            assertThat(orderRepository.findAllByUserId(new UserId(USER_ID)).size()).isEqualTo(1);
+        }
     }
 
    /* @DisplayName("getOrderList 메서드 테스트")
