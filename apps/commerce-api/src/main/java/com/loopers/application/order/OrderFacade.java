@@ -45,7 +45,8 @@ public class OrderFacade {
         Map<Long, Integer> orderItems = order.getOrderItems().stream()
                 .collect(Collectors.toMap(OrderItem::getProductId, OrderItem::getQuantity, Integer::sum));
 
-        List<Product> products = productRepository.findAllById(new ArrayList<>(orderItems.keySet()));
+        List<Long> ids = orderItems.keySet().stream().sorted().toList();
+        List<Product> products = productRepository.findByIdForUpdate(ids);
         Map<Long, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, Function.identity()));
 

@@ -7,7 +7,6 @@ import com.loopers.application.product.ProductFacade;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.coupon.CouponType;
 import com.loopers.domain.point.Point;
-import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
@@ -15,6 +14,7 @@ import com.loopers.domain.user.UserRepository;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.infrastructure.order.OrderJpaRepository;
 import com.loopers.infrastructure.point.PointJpaRepository;
+import com.loopers.infrastructure.product.ProductJpaRepository;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +47,8 @@ class OrderFacadeConcurrencyIntegrationTest {
     private OrderJpaRepository orderJpaRepository;
     @Autowired
     private BrandJpaRepository brandJpaRepository;
+    @Autowired
+    private ProductJpaRepository productJpaRepository;
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
 
@@ -115,7 +117,7 @@ class OrderFacadeConcurrencyIntegrationTest {
                 new OrderCriteria(USER_ID, List.of(new OrderCriteria.OrderLine(p2.getId(), 1, p2.getPrice().getAmount())), null)
         );
 
-        int threadCount = 10;
+        int threadCount = 100;
         ExecutorService es = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
@@ -137,10 +139,50 @@ class OrderFacadeConcurrencyIntegrationTest {
         assertThat(actualRemain).isEqualByComparingTo(expectedRemain);
     }
 
-    @DisplayName("좋아요와 싫어요가 섞여도 최종 좋아요 수가 정확하다.")
+    @DisplayName("동일한 상품에 대해 여러 주문이 동시에 요청되어도, 재고가 정상적으로 차감되어야 한다.")
     @Test
-    void mixedLikeAndCancel() throws Exception {
+    void shouldDecreaseStockCorrectly_whenConcurrentRequests() throws Exception {
+        int initialStock = 30;
+        BigDecimal price = new BigDecimal("100000");
 
+        Product product = productFacade.create(
+                new ProductCriteria("스니커즈", initialStock, price, brandId)
+        );
+
+        int threadCount = 50;
+        OrderCriteria payload = new OrderCriteria(
+                USER_ID,
+                List.of(new OrderCriteria.OrderLine(product.getId(), 1, product.getPrice().getAmount())),
+                null
+        );
+
+        ExecutorService es = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            es.submit(() -> {
+                try {
+                    orderFacade.placeOrder(payload);
+                } catch (Exception ignored) {
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        boolean completed = latch.await(15, TimeUnit.SECONDS);
+        assertThat(completed).as("쓰레드 작업이 제한 시간 내 완료 되어야 함").isTrue();
+
+        long successOrders = orderJpaRepository.count();
+
+        int expectedRemain = initialStock - (int) successOrders;
+        int actualRemain = productJpaRepository.findById(product.getId())
+                .orElseThrow()
+                .getStock()
+                .getValue();
+
+        assertThat(actualRemain).isEqualTo(expectedRemain);
+        assertThat(actualRemain).isGreaterThanOrEqualTo(0);
     }
 
 }
