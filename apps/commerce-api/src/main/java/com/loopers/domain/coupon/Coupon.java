@@ -1,7 +1,6 @@
 package com.loopers.domain.coupon;
 
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
+import com.loopers.domain.BaseEntity;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -9,11 +8,7 @@ import java.math.RoundingMode;
 
 @Entity
 @Table(name = "member_coupon")
-public class Coupon {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class Coupon extends BaseEntity {
 
     private String userId;
 
@@ -34,8 +29,6 @@ public class Coupon {
         this.amount = amount;
         this.used = false;
     }
-
-    public Long getId() { return id; }
 
     public String getUserId() { return userId; }
 

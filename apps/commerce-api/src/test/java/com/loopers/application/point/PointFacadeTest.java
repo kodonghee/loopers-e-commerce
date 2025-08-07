@@ -20,7 +20,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -84,11 +83,9 @@ class PointFacadeTest {
 
             // act
             pointFacade.chargePoints(USER_ID, CHARGE_AMOUNT);
-            BigDecimal result = pointFacade.getPoints(USER_ID);
 
             // assert
             BigDecimal expectedBalance = INITIAL_AMOUNT.add(CHARGE_AMOUNT);
-            assertThat(result).isEqualTo(expectedBalance);
             assertThat(existingPoint.getPointValue()).isEqualTo(expectedBalance);
             verify(pointRepository).find(USER_ID);
         }

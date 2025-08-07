@@ -51,8 +51,6 @@ public class OrderFacade {
 
         for (Map.Entry<Long, Integer> entry : orderItems.entrySet()) {
             Product product = productMap.get(entry.getKey());
-            System.out.println(entry.getKey());
-            System.out.println(product);
             if (product == null) {
                 throw new CoreException(ErrorType.BAD_REQUEST);
             }

@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -22,15 +23,12 @@ import static org.mockito.Mockito.when;
 @DisplayName("LikeUseCase 단위 테스트")
 class LikeFacadeTest {
 
-    // 테스트 대상인 UseCase 객체에 Mock 객체들을 주입
     @InjectMocks
     private LikeFacade likeFacade;
 
-    // UseCase가 의존하는 LikeDomainService를 Mock 객체로 생성
     @Mock
     private LikeService likeService;
 
-    // UseCase가 직접 사용하는 LikeRepository를 Mock 객체로 생성
     @Mock
     private LikeRepository likeRepository;
 
@@ -80,22 +78,26 @@ class LikeFacadeTest {
         @DisplayName("좋아요한 상품 목록 조회 시, LikeInfo 리스트를 반환해야 한다.")
         void getLikedProducts_shouldReturnLikeInfoList() {
             // arrange
-            List<Like> mockLikes = List.of(
-                    new Like(USER_ID_STRING, PRODUCT_ID),
-                    new Like(USER_ID_STRING, OTHER_PRODUCT_ID)
-            );
-            when(likeRepository.findAllByUserId(USER_ID)).thenReturn(mockLikes);
-
-            List<LikeResult> expectedList = List.of(
-                    new LikeResult(USER_ID_STRING, PRODUCT_ID),
-                    new LikeResult(USER_ID_STRING, OTHER_PRODUCT_ID)
-            );
+            Like like1 = new Like(USER_ID_STRING, PRODUCT_ID);
+            Like like2 = new Like(USER_ID_STRING, OTHER_PRODUCT_ID);
+            when(likeService.getAllByUserId(any(UserId.class))).thenReturn(List.of(like1, like2));
 
             // act
             List<LikeResult> result = likeFacade.getLikedProducts(USER_ID);
 
             // assert
-            assertThat(result).containsExactlyInAnyOrderElementsOf(expectedList);
+            assertThat(result).hasSize(2);
+            assertThat(result).anySatisfy(r -> {
+                assertThat(r.userId()).isEqualTo(USER_ID_STRING);
+                assertThat(r.productId()).isEqualTo(PRODUCT_ID);
+            });
+
+            assertThat(result).anySatisfy(r -> {
+                assertThat(r.userId()).isEqualTo(USER_ID_STRING);
+                assertThat(r.productId()).isEqualTo(OTHER_PRODUCT_ID);
+            });
+
+            verify(likeService).getAllByUserId(any(UserId.class));
         }
     }
 }

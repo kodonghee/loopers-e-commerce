@@ -11,9 +11,6 @@ import java.util.List;
 @Table(name = "orders")
 public class Order extends BaseEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     private String userId;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
