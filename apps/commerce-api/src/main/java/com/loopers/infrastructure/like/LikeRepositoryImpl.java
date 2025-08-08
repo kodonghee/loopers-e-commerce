@@ -19,6 +19,10 @@ public class LikeRepositoryImpl implements LikeRepository {
     public Optional<Like> findByUserIdAndProductId(UserId userId, Long productId) {
         return likeJpaRepository.findByUserIdAndProductId(userId.getUserId(), productId);
     }
+    @Override
+    public int deleteByUserIdAndProductId(UserId userId, Long productId) {
+        return likeJpaRepository.deleteByUserIdAndProductId(userId.getUserId(), productId);
+    }
 
     @Override
     public void save(Like like) {

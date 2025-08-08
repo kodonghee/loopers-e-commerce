@@ -1,0 +1,188 @@
+package com.loopers.application.order;
+
+import com.loopers.application.coupon.CouponCriteria;
+import com.loopers.application.coupon.CouponUseCase;
+import com.loopers.application.product.ProductCriteria;
+import com.loopers.application.product.ProductFacade;
+import com.loopers.domain.brand.Brand;
+import com.loopers.domain.coupon.CouponType;
+import com.loopers.domain.point.Point;
+import com.loopers.domain.product.Product;
+import com.loopers.domain.user.Gender;
+import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserRepository;
+import com.loopers.infrastructure.brand.BrandJpaRepository;
+import com.loopers.infrastructure.order.OrderJpaRepository;
+import com.loopers.infrastructure.point.PointJpaRepository;
+import com.loopers.infrastructure.product.ProductJpaRepository;
+import com.loopers.utils.DatabaseCleanUp;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest
+@DisplayName("주문 동시성 테스트")
+class OrderFacadeConcurrencyIntegrationTest {
+
+    @Autowired
+    private CouponUseCase couponUseCase;
+    @Autowired
+    private OrderFacade orderFacade;
+    @Autowired
+    private ProductFacade productFacade;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private PointJpaRepository pointJpaRepository;
+    @Autowired
+    private OrderJpaRepository orderJpaRepository;
+    @Autowired
+    private BrandJpaRepository brandJpaRepository;
+    @Autowired
+    private ProductJpaRepository productJpaRepository;
+    @Autowired
+    private DatabaseCleanUp databaseCleanUp;
+
+    private static final String USER_ID = "Annie";
+    private Long brandId;
+
+    @BeforeEach
+    void setUp() {
+        User user = new User(USER_ID, Gender.F, "1995-06-11", "test@naver.com");
+        userRepository.save(user);
+
+        pointJpaRepository.save(new Point(USER_ID, new BigDecimal("300000")));
+
+        Brand brand = brandJpaRepository.save(new Brand("Nike"));
+        this.brandId = brand.getId();
+    }
+
+    @AfterEach
+    void tearDown() {
+        databaseCleanUp.truncateAllTables();
+    }
+
+    @DisplayName("동일한 쿠폰으로 여러 기기에서 동시에 주문해도, 쿠폰은 단 한번만 사용되어야 한다.")
+    @Test
+    void shouldCouponUsedOnce_whenConcurrentRequests() throws InterruptedException {
+        Product product = productFacade.create(
+                new ProductCriteria("스니커즈", 10, new BigDecimal("100000"), brandId)
+        );
+        Long userCouponId = couponUseCase.createCoupon(new CouponCriteria(USER_ID, CouponType.FIXED, new BigDecimal("1000")));
+
+        OrderCriteria orderCriteria = new OrderCriteria(
+                USER_ID,
+                List.of(new OrderCriteria.OrderLine(product.getId(), 1, product.getPrice().getAmount())),
+                userCouponId
+        );
+
+        int threadCount = 100;
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    orderFacade.placeOrder(orderCriteria);
+                } catch (Exception ignored) {
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+
+        Long successCount = orderJpaRepository.count();
+        assertThat(successCount).isEqualTo(1);
+    }
+
+    @DisplayName("동일한 유저가 서로 다른 주문을 동시에 수행해도, 포인트가 정상적으로 차감되어야 한다.")
+    @Test
+    void shouldDecreasePointCorrectly_whenConcurrentRequests() throws Exception {
+        Product p1 = productFacade.create(new ProductCriteria("A", 10, new BigDecimal("100000"), brandId));
+        Product p2 = productFacade.create(new ProductCriteria("B", 10, new BigDecimal("100000"), brandId));
+
+        List<OrderCriteria> payloads = List.of(
+                new OrderCriteria(USER_ID, List.of(new OrderCriteria.OrderLine(p1.getId(), 1, p1.getPrice().getAmount())), null),
+                new OrderCriteria(USER_ID, List.of(new OrderCriteria.OrderLine(p2.getId(), 1, p2.getPrice().getAmount())), null)
+        );
+
+        int threadCount = 100;
+        ExecutorService es = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            OrderCriteria c = payloads.get(i % payloads.size());
+            es.submit(() -> {
+                try { orderFacade.placeOrder(c); } catch (Exception ignored) {}
+                finally { latch.countDown(); }
+            });
+        }
+
+        latch.await(10, TimeUnit.SECONDS);
+
+        Long successOrders = orderJpaRepository.count();
+
+        BigDecimal expectedRemain = new BigDecimal("300000").subtract(new BigDecimal("100000").multiply(new BigDecimal(successOrders)));
+
+        BigDecimal actualRemain = pointJpaRepository.findByUserId(USER_ID).orElseThrow().getPointValue();
+        assertThat(actualRemain).isEqualByComparingTo(expectedRemain);
+    }
+
+    @DisplayName("동일한 상품에 대해 여러 주문이 동시에 요청되어도, 재고가 정상적으로 차감되어야 한다.")
+    @Test
+    void shouldDecreaseStockCorrectly_whenConcurrentRequests() throws Exception {
+        int initialStock = 30;
+        BigDecimal price = new BigDecimal("100000");
+
+        Product product = productFacade.create(
+                new ProductCriteria("스니커즈", initialStock, price, brandId)
+        );
+
+        int threadCount = 50;
+        OrderCriteria payload = new OrderCriteria(
+                USER_ID,
+                List.of(new OrderCriteria.OrderLine(product.getId(), 1, product.getPrice().getAmount())),
+                null
+        );
+
+        ExecutorService es = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            es.submit(() -> {
+                try {
+                    orderFacade.placeOrder(payload);
+                } catch (Exception ignored) {
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        boolean completed = latch.await(15, TimeUnit.SECONDS);
+        assertThat(completed).as("쓰레드 작업이 제한 시간 내 완료 되어야 함").isTrue();
+
+        long successOrders = orderJpaRepository.count();
+
+        int expectedRemain = initialStock - (int) successOrders;
+        int actualRemain = productJpaRepository.findById(product.getId())
+                .orElseThrow()
+                .getStock()
+                .getValue();
+
+        assertThat(actualRemain).isEqualTo(expectedRemain);
+        assertThat(actualRemain).isGreaterThanOrEqualTo(0);
+    }
+
+}

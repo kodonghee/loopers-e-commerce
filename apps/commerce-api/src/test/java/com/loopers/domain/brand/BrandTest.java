@@ -16,12 +16,11 @@ class BrandTest {
         String invalidName = "";
 
         // act
-        CoreException result = assertThrows(CoreException.class, () -> {
+        IllegalArgumentException result = assertThrows(IllegalArgumentException.class, () -> {
             new Brand(invalidName);
         });
 
         // assert
-        assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
         assertThat(result.getMessage()).contains("브랜드명");
     }
 

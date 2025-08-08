@@ -10,4 +10,5 @@ public interface LikeJpaRepository extends JpaRepository<Like, Long> {
     Optional<Like> findByUserIdAndProductId(String userId, Long productId);
     List<Like> findAllByUserId(String userId);
     long countByProductId(Long productId);
+    int deleteByUserIdAndProductId(String userId, Long productId);
 }

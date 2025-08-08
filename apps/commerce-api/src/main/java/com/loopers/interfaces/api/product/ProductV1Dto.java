@@ -1,6 +1,6 @@
 package com.loopers.interfaces.api.product;
 
-import com.loopers.application.product.ProductInfo;
+import com.loopers.application.product.ProductResult;
 import com.loopers.domain.product.ProductSearchCondition;
 
 import java.math.BigDecimal;
@@ -12,9 +12,9 @@ public class ProductV1Dto {
             Integer stock,
             BigDecimal price,
             String brandName,
-            Integer likeCount
+            Long likeCount
     ) {
-        public static ProductResponse from(ProductInfo info) {
+        public static ProductResponse from(ProductResult info) {
             return new ProductResponse(
                     info.productId(),
                     info.name(),

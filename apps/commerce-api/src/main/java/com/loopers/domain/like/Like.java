@@ -1,19 +1,18 @@
 package com.loopers.domain.like;
 
+import com.loopers.domain.BaseEntity;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
-import lombok.NoArgsConstructor;
 
 import java.util.Objects;
 
 @Entity
 @Table(name = "product_like", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "product_id"}))
-public class Like {
+public class Like extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Version
+    private Long version;
 
     @Column(name = "user_id", nullable = false)
     private String userId;

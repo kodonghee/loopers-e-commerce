@@ -41,10 +41,13 @@ public class ProductSearchCondition {
     }
 
     public Pageable getPageable (){
+        if (sortType == ProductSortType.LIKES_DESC) {
+            return PageRequest.of(this.page, this.size);
+        }
         return PageRequest.of(
-                this.getPage(),
-                this.getSize(),
-                convertSort(this.getSortType())
+                this.page,
+                this.size,
+                convertSort(this.sortType)
         );
     }
 
@@ -52,7 +55,7 @@ public class ProductSearchCondition {
         return switch (sortType) {
             case LATEST -> Sort.by(Sort.Direction.DESC, "createdAt");
             case PRICE_ASC -> Sort.by(Sort.Direction.ASC, "price");
-            case LIKES_DESC -> Sort.by(Sort.Direction.DESC, "likeCount");
+            case LIKES_DESC -> Sort.unsorted();
         };
     }
 }

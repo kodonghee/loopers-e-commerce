@@ -7,10 +7,6 @@ import jakarta.persistence.*;
 @Table(name = "product")
 public class Product extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     @Column(nullable = false)
     private String name;
 
