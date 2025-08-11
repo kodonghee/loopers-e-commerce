@@ -1,17 +1,17 @@
 package com.loopers.interfaces.api.user;
 
-import com.loopers.application.user.UserCommand;
-import com.loopers.application.user.UserInfo;
+import com.loopers.application.user.UserCriteria;
+import com.loopers.application.user.UserResult;
 import com.loopers.domain.user.Gender;
 
 public class UserV1Dto {
     public record UserRequest(String userId, String gender, String birthDate, String email) {
-        public UserCommand.Create toCommand (){
-            return new UserCommand.Create(userId, Gender.from(gender), birthDate, email);
+        public UserCriteria.Create toCommand (){
+            return new UserCriteria.Create(userId, Gender.from(gender), birthDate, email);
         }
     }
     public record UserResponse(String userId, String gender, String birthDate, String email) {
-        public static UserResponse from(UserInfo info) {
+        public static UserResponse from(UserResult info) {
             return new UserResponse(
                     info.userId(),
                     info.gender(),

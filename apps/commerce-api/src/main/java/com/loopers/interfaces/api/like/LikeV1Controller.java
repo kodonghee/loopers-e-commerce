@@ -1,13 +1,14 @@
 package com.loopers.interfaces.api.like;
 
-import com.loopers.application.like.LikeUseCase;
-import com.loopers.application.like.LikeInfo;
-import com.loopers.domain.user.User;
+import com.loopers.application.like.LikeCriteria;
+import com.loopers.application.like.LikeFacade;
+import com.loopers.application.like.LikeResult;
 import com.loopers.domain.user.UserId;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import javax.script.ScriptEngine;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -15,7 +16,7 @@ import java.util.List;
 @RequestMapping("/api/v1/like/products")
 public class LikeV1Controller implements LikeV1ApiSpec {
 
-    private final LikeUseCase likeUseCase;
+    private final LikeFacade likeFacade;
 
     @PostMapping("/{productId}")
     @Override
@@ -23,7 +24,8 @@ public class LikeV1Controller implements LikeV1ApiSpec {
             @RequestHeader("X-USER-ID") UserId userId,
             @PathVariable("productId") Long productId
     ) {
-        likeUseCase.likeProduct(userId, productId);
+        LikeCriteria criteria = new LikeCriteria(userId.getUserId(), productId);
+        likeFacade.likeProduct(criteria);
         return ApiResponse.success();
     }
 
@@ -33,7 +35,8 @@ public class LikeV1Controller implements LikeV1ApiSpec {
             @RequestHeader("X-USER-ID") UserId userId,
             @PathVariable("productId") Long productId
     ) {
-        likeUseCase.cancelLikeProduct(userId, productId);
+        LikeCriteria criteria = new LikeCriteria(userId.getUserId(), productId);
+        likeFacade.cancelLikeProduct(criteria);
         return ApiResponse.success();
     }
 
@@ -42,7 +45,7 @@ public class LikeV1Controller implements LikeV1ApiSpec {
     public ApiResponse<List<LikeV1Dto.LikeProductResponse>> getLikedProducts(
             @RequestHeader("X-USER-ID") UserId userId
     ) {
-        List<LikeInfo> likedProducts = likeUseCase.getLikedProducts(userId);
+        List<LikeResult> likedProducts = likeFacade.getLikedProducts(userId);
         List<LikeV1Dto.LikeProductResponse> response = likedProducts.stream()
                 .map(LikeV1Dto.LikeProductResponse::from)
                 .toList();

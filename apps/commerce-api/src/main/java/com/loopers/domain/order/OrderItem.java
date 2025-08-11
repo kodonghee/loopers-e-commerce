@@ -28,6 +28,7 @@ public class OrderItem {
         this.price = price;
     }
 
+    public Long getOrderId() { return id; }
     public Long getProductId() {
         return productId;
     }

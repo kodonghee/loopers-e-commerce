@@ -1,7 +1,7 @@
 package com.loopers.interfaces.api.product;
 
-import com.loopers.application.product.ProductInfo;
-import com.loopers.application.product.ProductUseCase;
+import com.loopers.application.product.ProductResult;
+import com.loopers.application.product.ProductFacade;
 import com.loopers.domain.product.ProductSearchCondition;
 import com.loopers.interfaces.api.ApiResponse;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,7 +15,7 @@ import java.util.List;
 @RequestMapping("/api/v1/products")
 public class ProductV1Controller implements ProductV1ApiSpec {
 
-    private final ProductUseCase productUseCase;
+    private final ProductFacade productFacade;
 
     @GetMapping
     @Override
@@ -28,7 +28,7 @@ public class ProductV1Controller implements ProductV1ApiSpec {
         ProductSearchCondition condition = new ProductSearchCondition(
                 brandId, sortType, page, size
         );
-        List<ProductInfo> products = productUseCase.getProductList(condition);
+        List<ProductResult> products = productFacade.getProductList(condition);
         List<ProductV1Dto.ProductResponse> response = products.stream()
                 .map(ProductV1Dto.ProductResponse::from)
                 .toList();
@@ -42,7 +42,7 @@ public class ProductV1Controller implements ProductV1ApiSpec {
             @Parameter(description = "상품 ID", example = "1")
             @PathVariable("productId") Long productId
     ) {
-        ProductInfo product = productUseCase.getProductDetail(productId);
+        ProductResult product = productFacade.getProductDetail(productId);
         return ApiResponse.success(ProductV1Dto.ProductResponse.from(product));
     }
 

@@ -78,15 +78,15 @@ public class Point {
 
     private void validateUseAmount(BigDecimal value) {
         if (value == null) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "사용할 포인트 값이 null입니다.");
+            throw new IllegalArgumentException("사용할 포인트 값이 null입니다.");
         }
 
         if (value.compareTo(MINIMUM_POSITIVE_POINT) < 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "사용할 포인트는 0보다 커야 합니다.");
+            throw new IllegalArgumentException("사용할 포인트는 0보다 커야 합니다.");
         }
 
         if (this.pointValue.compareTo(value) < 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "포인트가 부족합니다.");
+            throw new IllegalArgumentException("포인트가 부족합니다.");
         }
     }
 
