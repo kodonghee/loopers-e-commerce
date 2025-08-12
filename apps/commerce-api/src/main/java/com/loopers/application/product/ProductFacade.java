@@ -32,24 +32,8 @@ public class ProductFacade {
 
     @Transactional(readOnly = true)
     public List<ProductResult> getProductList(ProductSearchCondition condition) {
-        List<Product> products = productRepository.findAllByCondition(condition);
-
-        List<ProductResult> results =  products.stream()
-                .map(product -> {
-                    String brandName = brandReader.getBrandName(product.getBrandId());
-                    Long likeCount = productLikeSummaryRepository.findByProductId(product.getId())
-                            .map(ProductLikeSummary::getLikeCount)
-                            .orElse(0L);
-                    return ProductMapper.fromProduct(product, brandName, likeCount);
-                })
-                .toList();
-
-        if (condition.getSortType() == ProductSearchCondition.ProductSortType.LIKES_DESC) {
-            results = results.stream()
-                    .sorted((a, b) -> Long.compare(b.likeCount(), a.likeCount()))
-                    .toList();
-        }
-        return results;
+        List<ProductListView> rows = productRepository.findListViewByCondition(condition);
+        return rows.stream().map(ProductMapper::from).toList();
     }
 
     @Transactional(readOnly = true)
