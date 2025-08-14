@@ -28,17 +28,34 @@ public interface ProductJpaRepository extends JpaRepository<Product, Long> {
           p.stock_value      AS stockValue,
           p.price            AS price,
           b.name             AS brandName,
-          COALESCE(pls.like_count, 0) AS likeCount
-        FROM product p
+          pls.like_count     AS likeCount
+        FROM product_like_summary pls
+        JOIN product p ON p.id = pls.product_id
         JOIN brand b ON b.id = p.brand_id
-        LEFT JOIN product_like_summary pls ON pls.product_id = p.id
-        WHERE (:brandId IS NULL OR p.brand_id = :brandId)
-        ORDER BY COALESCE(pls.like_count, 0) DESC, p.id DESC
+        WHERE p.brand_id = :brandId
+        ORDER BY pls.like_count DESC, pls.product_id DESC
         LIMIT :limit OFFSET :offset
         """, nativeQuery = true)
-    List<ProductListView> findListLikesDesc(@Param("brandId") Long brandId,
-                                            @Param("limit") int limit,
-                                            @Param("offset") int offset);
+    List<ProductListView> findListLikesDescByBrand(@Param("brandId") Long brandId,
+                                                   @Param("limit") int limit,
+                                                   @Param("offset") int offset);
+
+    @Query(value = """
+        SELECT
+          p.id               AS id,
+          p.name             AS name,
+          p.stock_value      AS stockValue,
+          p.price            AS price,
+          b.name             AS brandName,
+          pls.like_count     AS likeCount
+        FROM product_like_summary pls
+        JOIN product p ON p.id = pls.product_id
+        JOIN brand b ON b.id = p.brand_id
+        ORDER BY pls.like_count DESC, pls.product_id DESC
+        LIMIT :limit OFFSET :offset
+        """, nativeQuery = true)
+    List<ProductListView> findListLikesDescGlobal(@Param("limit") int limit,
+                                                  @Param("offset") int offset);
 
     @Query(value = """
         SELECT
@@ -51,13 +68,13 @@ public interface ProductJpaRepository extends JpaRepository<Product, Long> {
         FROM product p
         JOIN brand b ON b.id = p.brand_id
         LEFT JOIN product_like_summary pls ON pls.product_id = p.id
-        WHERE (:brandId IS NULL OR p.brand_id = :brandId)
+        WHERE p.brand_id = :brandId
         ORDER BY p.created_at DESC, p.id DESC
         LIMIT :limit OFFSET :offset
         """, nativeQuery = true)
-    List<ProductListView> findListLatest(@Param("brandId") Long brandId,
-                                         @Param("limit") int limit,
-                                         @Param("offset") int offset);
+    List<ProductListView> findListLatestByBrand(@Param("brandId") Long brandId,
+                                                @Param("limit") int limit,
+                                                @Param("offset") int offset);
 
     @Query(value = """
         SELECT
@@ -70,12 +87,46 @@ public interface ProductJpaRepository extends JpaRepository<Product, Long> {
         FROM product p
         JOIN brand b ON b.id = p.brand_id
         LEFT JOIN product_like_summary pls ON pls.product_id = p.id
-        WHERE (:brandId IS NULL OR p.brand_id = :brandId)
+        ORDER BY p.created_at DESC, p.id DESC
+        LIMIT :limit OFFSET :offset
+        """, nativeQuery = true)
+    List<ProductListView> findListLatestGlobal(@Param("limit") int limit,
+                                               @Param("offset") int offset);
+
+    @Query(value = """
+        SELECT
+          p.id               AS id,
+          p.name             AS name,
+          p.stock_value      AS stockValue,
+          p.price            AS price,
+          b.name             AS brandName,
+          COALESCE(pls.like_count, 0) AS likeCount
+        FROM product p
+        JOIN brand b ON b.id = p.brand_id
+        LEFT JOIN product_like_summary pls ON pls.product_id = p.id
+        WHERE p.brand_id = :brandId
         ORDER BY p.price ASC, p.id DESC
         LIMIT :limit OFFSET :offset
         """, nativeQuery = true)
-    List<ProductListView> findListPriceAsc(@Param("brandId") Long brandId,
-                                           @Param("limit") int limit,
-                                           @Param("offset") int offset);
+    List<ProductListView> findListPriceAscByBrand(@Param("brandId") Long brandId,
+                                                  @Param("limit") int limit,
+                                                  @Param("offset") int offset);
+
+    @Query(value = """
+        SELECT
+          p.id               AS id,
+          p.name             AS name,
+          p.stock_value      AS stockValue,
+          p.price            AS price,
+          b.name             AS brandName,
+          COALESCE(pls.like_count, 0) AS likeCount
+        FROM product p
+        JOIN brand b ON b.id = p.brand_id
+        LEFT JOIN product_like_summary pls ON pls.product_id = p.id
+        ORDER BY p.price ASC, p.id DESC
+        LIMIT :limit OFFSET :offset
+        """, nativeQuery = true)
+    List<ProductListView> findListPriceAscGlobal(@Param("limit") int limit,
+                                                 @Param("offset") int offset);
 
 }

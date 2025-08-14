@@ -27,7 +27,11 @@ public class ProductFacade {
                 new Money(command.priceValue()),
                 command.brandId()
         );
-        return productRepository.save(product);
+
+        Product saved = productRepository.save(product);
+        productLikeSummaryRepository.ensureRow(saved.getId());
+
+        return saved;
     }
 
     @Transactional(readOnly = true)

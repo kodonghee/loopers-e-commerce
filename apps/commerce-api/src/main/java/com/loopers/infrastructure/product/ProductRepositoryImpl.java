@@ -57,12 +57,31 @@ public class ProductRepositoryImpl implements ProductRepository {
     public List<ProductListView> findListViewByCondition(ProductSearchCondition condition) {
         int limit  = condition.getSize();
         int offset = condition.getPage() * condition.getSize();
+        Long brandId = condition.getBrandId();
 
-        return switch (condition.getSortType()) {
-            case LIKES_DESC -> productJpaRepository.findListLikesDesc(condition.getBrandId(), limit, offset);
-            case PRICE_ASC  -> productJpaRepository.findListPriceAsc(condition.getBrandId(), limit, offset);
-            case LATEST     -> productJpaRepository.findListLatest(condition.getBrandId(), limit, offset);
-        };
+        switch (condition.getSortType()) {
+            case LIKES_DESC:
+                if (brandId != null) {
+                    return productJpaRepository.findListLikesDescByBrand(brandId, limit, offset);
+                } else {
+                    return productJpaRepository.findListLikesDescGlobal(limit, offset);
+                }
+
+            case PRICE_ASC:
+                if (brandId != null) {
+                    return productJpaRepository.findListPriceAscByBrand(brandId, limit, offset);
+                } else {
+                    return productJpaRepository.findListPriceAscGlobal(limit, offset);
+                }
+
+            case LATEST:
+            default:
+                if (brandId != null) {
+                    return productJpaRepository.findListLatestByBrand(brandId, limit, offset);
+                } else {
+                    return productJpaRepository.findListLatestGlobal(limit, offset);
+                }
+        }
     }
 
 }
