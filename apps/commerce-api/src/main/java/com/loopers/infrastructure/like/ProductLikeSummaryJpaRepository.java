@@ -18,9 +18,8 @@ public interface ProductLikeSummaryJpaRepository extends JpaRepository<ProductLi
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
-        INSERT INTO product_like_summary (product_id, brand_id, like_count)
+        INSERT IGNORE INTO product_like_summary (product_id, brand_id, like_count)
         VALUES (:productId, :brandId, 0)
-        ON DUPLICATE KEY UPDATE brand_id = VALUES(brand_id)
         """, nativeQuery = true)
     void ensureRow(@Param("productId") Long productId, @Param("brandId") Long brandId);
 }
