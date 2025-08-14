@@ -29,7 +29,7 @@ public class ProductLikeSummaryRepositoryImpl implements ProductLikeSummaryRepos
     }
 
     @Override
-    public void ensureRow(Long productId) {
-        productLikeSummaryJpaRepository.ensureRow(productId);
+    public void ensureRow(Long productId, Long brandId) {
+        productLikeSummaryJpaRepository.ensureRow(productId, brandId);
     }
 }

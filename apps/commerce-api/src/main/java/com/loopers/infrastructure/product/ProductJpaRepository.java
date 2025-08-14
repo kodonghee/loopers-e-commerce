@@ -32,7 +32,7 @@ public interface ProductJpaRepository extends JpaRepository<Product, Long> {
         FROM product_like_summary pls
         JOIN product p ON p.id = pls.product_id
         JOIN brand b ON b.id = p.brand_id
-        WHERE p.brand_id = :brandId
+        WHERE pls.brand_id = :brandId
         ORDER BY pls.like_count DESC, pls.product_id DESC
         LIMIT :limit OFFSET :offset
         """, nativeQuery = true)

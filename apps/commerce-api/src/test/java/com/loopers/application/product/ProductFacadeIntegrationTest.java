@@ -76,7 +76,7 @@ class ProductFacadeIntegrationTest {
         ProductCriteria criteria = new ProductCriteria("coffee", 20, new BigDecimal("4500"), brandId);
         Product savedProduct = productFacade.create(criteria);
 
-        ProductLikeSummary likeSummary = new ProductLikeSummary(savedProduct.getId());
+        ProductLikeSummary likeSummary = new ProductLikeSummary(savedProduct.getId(), brandId);
         likeSummary.increment();
         productLikeSummaryRepository.save(likeSummary);
 
@@ -152,8 +152,8 @@ class ProductFacadeIntegrationTest {
         Product product2 = productFacade.create(new ProductCriteria("bag", 5, new BigDecimal("20000"), brandId));
 
         // 상품 1에 좋아요 2개, 상품 2에 좋아요 1개
-        ProductLikeSummary likeSummary1 = new ProductLikeSummary(product1.getId());
-        ProductLikeSummary likeSummary2 = new ProductLikeSummary(product2.getId());
+        ProductLikeSummary likeSummary1 = new ProductLikeSummary(product1.getId(), brandId);
+        ProductLikeSummary likeSummary2 = new ProductLikeSummary(product2.getId(), brandId);
         likeSummary1.increment();
         likeSummary2.increment();
         likeSummary2.increment();

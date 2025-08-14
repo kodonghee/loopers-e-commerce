@@ -1,6 +1,5 @@
 package com.loopers.domain.like;
 
-import com.loopers.domain.product.Product;
 import jakarta.persistence.*;
 
 @Entity
@@ -10,16 +9,17 @@ public class ProductLikeSummary {
     @Id
     private Long productId;
 
+    @Column(name = "brand_id", nullable = false)
+    private Long brandId;
+
     @Column(nullable = false)
     private Long likeCount;
 
-    /*@Version
-    private Long version;*/
-
     protected ProductLikeSummary() {}
 
-    public ProductLikeSummary(Long productId) {
+    public ProductLikeSummary(Long productId, Long brandId) {
         this.productId = productId;
+        this.brandId = brandId;
         this.likeCount = 0L;
     }
 
@@ -36,6 +36,10 @@ public class ProductLikeSummary {
 
     public Long getProductId() {
         return productId;
+    }
+
+    public Long getBrandId() {
+        return brandId;
     }
 
     public Long getLikeCount() {

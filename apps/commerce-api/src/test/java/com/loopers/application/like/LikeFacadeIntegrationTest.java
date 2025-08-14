@@ -72,8 +72,8 @@ class LikeFacadeIntegrationTest {
         this.firstProductId = firstProduct.getId();
         this.secondProductId = secondProduct.getId();
 
-        productLikeSummaryJpaRepository.save(new ProductLikeSummary(firstProductId));
-        productLikeSummaryJpaRepository.save(new ProductLikeSummary(secondProductId));
+        productLikeSummaryJpaRepository.save(new ProductLikeSummary(firstProductId, brandId));
+        productLikeSummaryJpaRepository.save(new ProductLikeSummary(secondProductId, brandId));
     }
     @AfterEach
     void tearDown() {

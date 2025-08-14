@@ -29,7 +29,7 @@ public class ProductFacade {
         );
 
         Product saved = productRepository.save(product);
-        productLikeSummaryRepository.ensureRow(saved.getId());
+        productLikeSummaryRepository.ensureRow(saved.getId(), saved.getBrandId());
 
         return saved;
     }
