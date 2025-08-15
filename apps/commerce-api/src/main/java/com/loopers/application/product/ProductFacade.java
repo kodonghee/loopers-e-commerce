@@ -5,6 +5,7 @@ import com.loopers.domain.like.ProductLikeSummary;
 import com.loopers.domain.like.ProductLikeSummaryRepository;
 import com.loopers.domain.product.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +41,7 @@ public class ProductFacade {
         return rows.stream().map(ProductMapper::from).toList();
     }
 
+    @Cacheable
     @Transactional(readOnly = true)
     public ProductResult getProductDetail(Long productId) {
         Product product = productRepository.findById(productId)
