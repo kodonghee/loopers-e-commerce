@@ -12,12 +12,13 @@ OUT_BASE="$RESULT_DIR/${TEST_NAME}_${TS}"
 
 # ----- 기본값 (실행 시 env로 덮어쓰기 가능) -----
 : "${BASE_URL:=http://localhost:8080}"
-: "${BRAND_ID:=500}"
+: "${BRAND_ID:=200}"
 : "${PAGE:=0}"
 : "${PAGE_SIZE:=20}"
 : "${SORT:=latest}"            # latest | price_asc | likes_desc
 : "${P95_MS:=25000}"           # p95 임계치(ms), 실행 시 조정 가능
 : "${DISCARD:=0}"              # 1이면 응답 바디 버림
+: "${WARM_COUNT:=50}"
 # -------------------------------------------------
 
 # Prometheus Remote Write 설정
@@ -39,6 +40,13 @@ K6_OUTPUTS=(-o "experimental-prometheus-rw" -o "json=${OUT_BASE}.metrics.json")
 export K6_PROMETHEUS_RW_SERVER_URL="${PROM_RW_URL}"
 export K6_PROMETHEUS_RW_TREND_STATS="${PROM_TREND_STATS}"
 
+# --- Redis FLUSH 옵션 (기본: 끔; Warm 측정 시 절대 켜지 마세요) ---
+: "${FLUSH_BEFORE:=0}"                       # 1이면 k6 전에 FLUSHDB 수행
+: "${REDIS_HOST:=localhost}"
+: "${REDIS_PORT:=6379}"
+: "${REDIS_DB:=0}"
+: "${REDIS_CONTAINER:=dev-redis-master}"
+
 echo "▶ Running k6 (LIST ONLY)"
 echo "   - BASE_URL    : $BASE_URL"
 echo "   - BRAND_ID    : $BRAND_ID"
@@ -53,6 +61,21 @@ echo "   - PROM_STATS  : $PROM_TREND_STATS"
 [[ "$PROM_NATIVE_HISTOGRAM" == "1" ]] && echo "   - PROM_NATIVE_HISTOGRAM: ON"
 if [[ -n "$EXTRA_FLAGS" ]]; then
   echo "   - THRESHOLDS  : SKIPPED (k6 + script)"
+fi
+
+flush_redis() {
+  echo "🧹 FLUSH Redis DB $REDIS_DB ..."
+  if docker ps -a --format '{{.Names}}' | grep -qw "$REDIS_CONTAINER"; then
+    docker exec "$REDIS_CONTAINER" redis-cli -n "$REDIS_DB" FLUSHDB
+  elif command -v redis-cli >/dev/null 2>&1; then
+    redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -n "$REDIS_DB" FLUSHDB
+  else
+    echo "ℹ️ no redis-cli/container — skip FLUSH"
+  fi
+}
+
+if [[ "$FLUSH_BEFORE" == "1" ]]; then
+  flush_redis || true
 fi
 
 k6 run $EXTRA_FLAGS \

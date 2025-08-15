@@ -12,6 +12,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.Cache;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -37,6 +39,9 @@ class ProductFacadeIntegrationTest {
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
 
+    @Autowired
+    CacheManager cacheManager;
+
     private Long brandId;
 
     @BeforeEach
@@ -48,6 +53,14 @@ class ProductFacadeIntegrationTest {
     @AfterEach
     void tearDown() {
         databaseCleanUp.truncateAllTables();
+    }
+
+    @AfterEach
+    void clearCaches() {
+        cacheManager.getCacheNames().forEach(n -> {
+            Cache c = cacheManager.getCache(n);
+            if (c != null) c.clear();
+        });
     }
 
     @Test

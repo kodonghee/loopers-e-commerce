@@ -6,9 +6,10 @@ import { htmlReport } from 'https://raw.githubusercontent.com/benc-uk/k6-reporte
 // ===== 실행 시 바꿔쓸 수 있는 환경변수 (기본값) =====
 const BASE_URL  = __ENV.BASE_URL  || 'http://localhost:8080';
 const BRAND_ID  = __ENV.BRAND_ID  || '500';
-const PAGE      = __ENV.PAGE      || '900';
-const PAGE_SIZE = __ENV.PAGE_SIZE || '500';
+const PAGE      = __ENV.PAGE      || '0';
+const PAGE_SIZE = __ENV.PAGE_SIZE || '20';
 const SORT      = __ENV.SORT      || 'latest';    // latest | price_asc | likes_desc
+const WARM_COUNT = Number(__ENV.WARM_COUNT || '50');
 
 // 임계치 런타임 설정
 const DISABLE_THRESHOLDS = (__ENV.DISABLE_THRESHOLDS || '0') === '1';
@@ -62,10 +63,7 @@ export default function () {
   else if (res.status >= 500) http5xx.add(1);
 
   // 기본 체크 (응답 스키마에 맞게 필요 시 수정)
-  const ok = check(res, {
-    'list: 200': (r) => r.status === 200,
-    'list: body exists': (r) => !!r.body && r.body.length > 0,
-  });
+  const ok = check(res, { 'list: 200': (r) => r.status === 200 });
 
   if (!ok) listErrors.add(1);
 

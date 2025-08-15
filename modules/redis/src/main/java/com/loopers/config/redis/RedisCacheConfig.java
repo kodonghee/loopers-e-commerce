@@ -31,7 +31,7 @@ public class RedisCacheConfig {
                 .computePrefixWith(name -> name + "::");
 
         RedisCacheConfiguration detailCfg = base.entryTtl(withJitter(Duration.ofMinutes(30)));
-        RedisCacheConfiguration listCfg   = base.entryTtl(withJitter(Duration.ofMinutes(5)));
+        RedisCacheConfiguration listCfg   = base.entryTtl(withJitter(Duration.ofMinutes(30)));
 
         return RedisCacheManager.builder(cf)
                 .cacheDefaults(base)
