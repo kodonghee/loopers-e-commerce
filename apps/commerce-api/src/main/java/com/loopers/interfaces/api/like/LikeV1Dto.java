@@ -9,4 +9,6 @@ public class LikeV1Dto {
             return new LikeProductResponse(info.productId());
         }
     }
+
+    public record LikeActionResponse(boolean changed) {}
 }

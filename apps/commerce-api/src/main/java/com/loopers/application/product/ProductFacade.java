@@ -1,5 +1,6 @@
 package com.loopers.application.product;
 
+import com.loopers.config.redis.RedisCacheConfig;
 import com.loopers.domain.brand.BrandReader;
 import com.loopers.domain.like.ProductLikeSummary;
 import com.loopers.domain.like.ProductLikeSummaryRepository;
@@ -41,7 +42,7 @@ public class ProductFacade {
         return rows.stream().map(ProductMapper::from).toList();
     }
 
-    @Cacheable
+    @Cacheable(cacheNames = RedisCacheConfig.CACHE_PRODUCT_DETAIL, key = "#productId", unless = "#result == null")
     @Transactional(readOnly = true)
     public ProductResult getProductDetail(Long productId) {
         Product product = productRepository.findById(productId)

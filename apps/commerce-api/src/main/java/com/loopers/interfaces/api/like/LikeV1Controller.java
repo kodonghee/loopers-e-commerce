@@ -25,8 +25,8 @@ public class LikeV1Controller implements LikeV1ApiSpec {
             @PathVariable("productId") Long productId
     ) {
         LikeCriteria criteria = new LikeCriteria(userId.getUserId(), productId);
-        likeFacade.likeProduct(criteria);
-        return ApiResponse.success();
+        boolean changed = likeFacade.likeProduct(criteria);
+        return ApiResponse.success(new LikeV1Dto.LikeActionResponse(changed));
     }
 
     @DeleteMapping("/{productId}")
@@ -36,8 +36,8 @@ public class LikeV1Controller implements LikeV1ApiSpec {
             @PathVariable("productId") Long productId
     ) {
         LikeCriteria criteria = new LikeCriteria(userId.getUserId(), productId);
-        likeFacade.cancelLikeProduct(criteria);
-        return ApiResponse.success();
+        boolean changed = likeFacade.cancelLikeProduct(criteria);
+        return ApiResponse.success(new LikeV1Dto.LikeActionResponse(changed));
     }
 
     @GetMapping
