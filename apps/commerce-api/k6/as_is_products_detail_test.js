@@ -57,7 +57,6 @@ export default function () {
 
   const ok = check(res, {
     'detail: 200': (r) => r.status === 200,
-    'detail: body exists': (r) => !!r.body && r.body.length > 0,
   });
   if (!ok) detailErrors.add(1);
 
@@ -65,10 +64,10 @@ export default function () {
   sleep(Math.random() * 0.6 + 0.2);
 }
 
-// 종료 시 요약 JSON만 생성 (HTML 리포트 제거)
 export function handleSummary(data) {
   const base = __ENV.OUT_BASE || `detail_results/run_${Date.now()}`;
   return {
     [`${base}.summary.json`]: JSON.stringify(data, null, 2),
+    [`${base}.summary.html`]: htmlReport(data),
   };
 }

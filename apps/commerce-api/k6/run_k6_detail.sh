@@ -19,6 +19,16 @@ OUT_BASE="$RESULT_DIR/${TEST_NAME}_${TS}"
 : "${WARM_COUNT:=50}"        # 워밍 요청 수
 # -------------------------------------------------
 
+: "${PROM_RW_ENABLE:=0}"
+: "${PROM_RW_URL:=http://localhost:9090/api/v1/write}"
+: "${PROM_TREND_STATS:=p(95),avg,max}"
+
+
+K6_OUTPUTS=(-o "experimental-prometheus-rw")
+export K6_PROMETHEUS_RW_SERVER_URL="${PROM_RW_URL}"
+export K6_PROMETHEUS_RW_TREND_STATS="${PROM_TREND_STATS}"
+
+
 # --- Redis FLUSH 옵션 (기본: 끔; Warm 측정 시 절대 켜지 마세요) ---
 : "${FLUSH_BEFORE:=0}"                       # 1이면 k6 전에 FLUSHDB 수행
 : "${REDIS_HOST:=localhost}"
@@ -54,6 +64,7 @@ if [[ "$FLUSH_BEFORE" == "1" ]]; then
 fi
 
 k6 run \
+  "${K6_OUTPUTS[@]}" \
   -e OUT_BASE="$OUT_BASE" \
   -e BASE_URL="$BASE_URL" \
   -e PRODUCT_ID="$PRODUCT_ID" \

@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static com.loopers.config.redis.RedisCacheConfig.CACHE_PRODUCT_LIST;
+
 @RequiredArgsConstructor
 @Service
 public class ProductFacade {
@@ -36,6 +38,14 @@ public class ProductFacade {
         return saved;
     }
 
+    @Cacheable(
+            cacheNames = CACHE_PRODUCT_LIST,
+            key = "'brand:' + (#condition.getBrandId() != null ? #condition.getBrandId() : 'ALL')" +
+                    " + ':sort:' + #condition.getSortType()" +
+                    " + ':p:' + #condition.getPage()" +
+                    " + ':s:' + #condition.getSize()",
+            unless = "#result == null || #result.isEmpty()"
+    )
     @Transactional(readOnly = true)
     public List<ProductResult> getProductList(ProductSearchCondition condition) {
         List<ProductListView> rows = productRepository.findListViewByCondition(condition);

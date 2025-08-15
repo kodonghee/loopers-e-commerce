@@ -8,7 +8,7 @@ const BASE_URL  = __ENV.BASE_URL  || 'http://localhost:8080';
 const BRAND_ID  = __ENV.BRAND_ID  || '500';
 const PAGE      = __ENV.PAGE      || '900';
 const PAGE_SIZE = __ENV.PAGE_SIZE || '500';
-const SORT      = __ENV.SORT      || 'likes_desc';    // latest | price_asc | likes_desc
+const SORT      = __ENV.SORT      || 'latest';    // latest | price_asc | likes_desc
 
 // 임계치 런타임 설정
 const DISABLE_THRESHOLDS = (__ENV.DISABLE_THRESHOLDS || '0') === '1';
@@ -37,6 +37,13 @@ export const options = {
   },
   tags: { app: 'loopers-commerce' },
 };
+
+export function setup() {
+  const url = `${BASE_URL}/api/v1/products?brandId=${BRAND_ID}&sort=${SORT}&page=${PAGE}&size=${PAGE_SIZE}`;
+  for (let i = 0; i < WARM_COUNT; i++) {
+    http.get(url, { headers: { 'Accept': 'application/json' } });
+  }
+}
 
 export default function () {
   const url = `${BASE_URL}/api/v1/products?brandId=${BRAND_ID}&sort=${SORT}&page=${PAGE}&size=${PAGE_SIZE}`;
