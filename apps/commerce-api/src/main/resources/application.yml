@@ -35,6 +35,18 @@ spring:
     activate:
       on-profile: local, test
 
+management:
+  server:
+    port: 8080
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      show-details: always
+
 ---
 spring:
   config:

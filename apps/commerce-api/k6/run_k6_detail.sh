@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_PATH="${1:-as_is_products_detail_test.js}"         # k6 스크립트 파일
-TEST_NAME="${2:-product-detail}"   # 결과 파일 prefix
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_PATH="${1:-$SCRIPT_DIR/as_is_products_detail_test.js}"   # k6 스크립트 파일
+TEST_NAME="${2:-product-detail}"                                # 결과 파일 prefix
 RESULT_DIR="${RESULT_DIR:-detail_results}"
 
 mkdir -p "$RESULT_DIR"
@@ -13,58 +14,54 @@ OUT_BASE="$RESULT_DIR/${TEST_NAME}_${TS}"
 # ----- 기본값 (실행 시 env로 덮어쓰기 가능) -----
 : "${BASE_URL:=http://localhost:8080}"
 : "${PRODUCT_ID:=1}"
-: "${P95_MS:=25000}"           # p95 임계치(ms), 실행 시 조정 가능
-: "${DISCARD:=0}"              # 1이면 응답 바디 버림
+: "${P95_MS:=25000}"         # p95 임계치(ms), 실행 시 조정 가능
+: "${DISCARD:=1}"            # 1이면 응답 바디 버림 (기본: 켬)
+: "${WARM_COUNT:=50}"        # 워밍 요청 수
 # -------------------------------------------------
 
-# Prometheus Remote Write 설정
-: "${PROM_RW_URL:=http://localhost:9090/api/v1/write}"   # Prometheus 주소
-: "${PROM_TREND_STATS:=p(95),avg,max}"                   # 변환할 통계
-: "${PROM_NATIVE_HISTOGRAM:=0}"                          # 1=네이티브 히스토그램
+# --- Redis FLUSH 옵션 (기본: 끔; Warm 측정 시 절대 켜지 마세요) ---
+: "${FLUSH_BEFORE:=0}"                       # 1이면 k6 전에 FLUSHDB 수행
+: "${REDIS_HOST:=localhost}"
+: "${REDIS_PORT:=6379}"
+: "${REDIS_DB:=0}"
+: "${REDIS_CONTAINER:=dev-redis-master}"
 
-# 임계치 스킵 스위치
-EXTRA_FLAGS=""
-DISABLE_THRESHOLDS_ENV="0"
-if [[ "${SKIP_THRESHOLDS:-0}" == "1" ]]; then
-  EXTRA_FLAGS="--no-thresholds"
-  DISABLE_THRESHOLDS_ENV="1"
+echo "▶ Running k6"
+echo "  SCRIPT      : $SCRIPT_PATH"
+echo "  BASE_URL    : $BASE_URL"
+echo "  PRODUCT_ID  : $PRODUCT_ID"
+echo "  WARM_COUNT  : $WARM_COUNT"
+echo "  P95_MS      : $P95_MS"
+echo "  DISCARD     : $DISCARD"
+echo "  OUT_BASE    : $OUT_BASE"
+echo "  FLUSH_BEFORE: $FLUSH_BEFORE"
+
+[[ -f "$SCRIPT_PATH" ]] || { echo "❌ k6 script not found: $SCRIPT_PATH"; exit 1; }
+
+flush_redis() {
+  echo "🧹 FLUSH Redis DB $REDIS_DB ..."
+  if docker ps -a --format '{{.Names}}' | grep -qw "$REDIS_CONTAINER"; then
+    docker exec "$REDIS_CONTAINER" redis-cli -n "$REDIS_DB" FLUSHDB
+  elif command -v redis-cli >/dev/null 2>&1; then
+    redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -n "$REDIS_DB" FLUSHDB
+  else
+    echo "ℹ️ no redis-cli/container — skip FLUSH"
+  fi
+}
+
+if [[ "$FLUSH_BEFORE" == "1" ]]; then
+  flush_redis || true
 fi
 
-K6_OUTPUTS=(-o "experimental-prometheus-rw" -o "json=${OUT_BASE}.metrics.json")
-
-# k6 환경변수 설정 (Prometheus Remote Write용)
-export K6_PROMETHEUS_RW_SERVER_URL="${PROM_RW_URL}"
-export K6_PROMETHEUS_RW_TREND_STATS="${PROM_TREND_STATS}"
-
-echo "▶ Running k6 (DETAIL ONLY)"
-echo "   - BASE_URL    : $BASE_URL"
-echo "   - PRODUCT_ID  : $PRODUCT_ID"
-echo "   - P95_MS      : $P95_MS"
-echo "   - DISCARD     : $DISCARD"
-echo "   - OUT_BASE    : $OUT_BASE"
-echo "   - PROM_RW_URL : $PROM_RW_URL"
-echo "   - PROM_STATS  : $PROM_TREND_STATS"
-[[ "$PROM_NATIVE_HISTOGRAM" == "1" ]] && echo "   - PROM_NATIVE_HISTOGRAM: ON"
-if [[ -n "$EXTRA_FLAGS" ]]; then
-  echo "   - THRESHOLDS  : SKIPPED (k6 + script)"
-fi
-
-k6 run $EXTRA_FLAGS \
-  "${K6_OUTPUTS[@]}" \
+k6 run \
   -e OUT_BASE="$OUT_BASE" \
   -e BASE_URL="$BASE_URL" \
   -e PRODUCT_ID="$PRODUCT_ID" \
   -e P95_MS="$P95_MS" \
   -e DISCARD="$DISCARD" \
-  -e DISABLE_THRESHOLDS="$DISABLE_THRESHOLDS_ENV" \
+  -e WARM_COUNT="$WARM_COUNT" \
   "$SCRIPT_PATH"
 
 echo
 echo "✅ Done!"
-echo "   - Summary JSON : ${OUT_BASE}.summary.json"
-echo "   - HTML Report  : ${OUT_BASE}.summary.html"
-echo "   - Raw metrics  : ${OUT_BASE}.metrics.json"
-echo
-echo "📈 Grafana에서 k6 대시보드 확인:"
-echo "   - Import Dashboard ID: 19665 (Prometheus용)"
-echo "   - Prometheus Data Source 선택"
+echo "  Summary JSON : ${OUT_BASE}.summary.json"
