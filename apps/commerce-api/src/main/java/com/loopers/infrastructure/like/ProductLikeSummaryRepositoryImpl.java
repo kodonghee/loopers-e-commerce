@@ -27,4 +27,9 @@ public class ProductLikeSummaryRepositoryImpl implements ProductLikeSummaryRepos
     public void save(ProductLikeSummary summary) {
         productLikeSummaryJpaRepository.save(summary);
     }
+
+    @Override
+    public void ensureRow(Long productId, Long brandId) {
+        productLikeSummaryJpaRepository.ensureRow(productId, brandId);
+    }
 }

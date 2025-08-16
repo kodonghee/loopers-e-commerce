@@ -8,6 +8,8 @@ import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,8 @@ import javax.script.ScriptEngine;
 import java.util.List;
 
 import static com.loopers.application.like.LikeMapper.toLike;
+import static com.loopers.config.redis.RedisCacheConfig.CACHE_PRODUCT_DETAIL;
+import static com.loopers.config.redis.RedisCacheConfig.CACHE_PRODUCT_LIST;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -26,17 +30,21 @@ public class LikeFacade {
     private final LikeRepository likeRepository;
     private final ProductLikeSummaryRepository productLikeSummaryRepository;
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CACHE_PRODUCT_DETAIL, key = "#criteria.productId()", condition = "#result == true"),
+            @CacheEvict(cacheNames = CACHE_PRODUCT_LIST,   allEntries = true,           condition = "#result == true")
+    })
     @Transactional(rollbackFor = Exception.class)
-    public void likeProduct(LikeCriteria criteria) {
+    public boolean likeProduct(LikeCriteria criteria) {
         Like like = toLike(criteria);
         if (likeRepository.findByUserIdAndProductId(new UserId(like.getUserId()), like.getProductId()).isPresent()) {
-            return;
+            return false;
         }
 
         try {
             likeRepository.save(like);
         } catch (DataIntegrityViolationException e) {
-            return;
+            return false;
         }
 
         ProductLikeSummary summary = productLikeSummaryRepository.findByProductIdForUpdate(like.getProductId())
@@ -44,16 +52,21 @@ public class LikeFacade {
 
         summary.increment();
         productLikeSummaryRepository.save(summary);
+        return true;
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = CACHE_PRODUCT_DETAIL, key = "#criteria.productId()", condition = "#result == true"),
+            @CacheEvict(cacheNames = CACHE_PRODUCT_LIST,   allEntries = true,           condition = "#result == true")
+    })
     @Transactional(rollbackFor = Exception.class)
-    public void cancelLikeProduct(LikeCriteria criteria) {
+    public boolean cancelLikeProduct(LikeCriteria criteria) {
         UserId userId = new UserId(criteria.userId());
         Long productId = criteria.productId();
 
         int deleted = likeRepository.deleteByUserIdAndProductId(userId, productId);
         if (deleted == 0) {
-            return;
+            return false;
         }
 
         ProductLikeSummary summary = productLikeSummaryRepository.findByProductIdForUpdate(productId)
@@ -61,6 +74,7 @@ public class LikeFacade {
 
         summary.decrement();
         productLikeSummaryRepository.save(summary);
+        return true;
     }
 
 

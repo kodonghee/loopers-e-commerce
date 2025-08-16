@@ -1,14 +1,19 @@
 package com.loopers.application.product;
 
+import com.loopers.config.redis.RedisCacheConfig;
 import com.loopers.domain.brand.BrandReader;
 import com.loopers.domain.like.ProductLikeSummary;
 import com.loopers.domain.like.ProductLikeSummaryRepository;
 import com.loopers.domain.product.*;
+import com.loopers.infrastructure.product.ProductListCache;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+
+import static com.loopers.config.redis.RedisCacheConfig.CACHE_PRODUCT_LIST;
 
 @RequiredArgsConstructor
 @Service
@@ -17,6 +22,7 @@ public class ProductFacade {
     private final ProductRepository productRepository;
     private final BrandReader brandReader;
     private final ProductLikeSummaryRepository productLikeSummaryRepository;
+    private final ProductListCache productListCache;
 
     @Transactional
     public Product create(ProductCriteria command) {
@@ -27,31 +33,28 @@ public class ProductFacade {
                 new Money(command.priceValue()),
                 command.brandId()
         );
-        return productRepository.save(product);
+
+        Product saved = productRepository.save(product);
+        productLikeSummaryRepository.ensureRow(saved.getId(), saved.getBrandId());
+        productListCache.evictByBrand(saved.getBrandId());
+
+        return saved;
     }
 
     @Transactional(readOnly = true)
     public List<ProductResult> getProductList(ProductSearchCondition condition) {
-        List<Product> products = productRepository.findAllByCondition(condition);
-
-        List<ProductResult> results =  products.stream()
-                .map(product -> {
-                    String brandName = brandReader.getBrandName(product.getBrandId());
-                    Long likeCount = productLikeSummaryRepository.findByProductId(product.getId())
-                            .map(ProductLikeSummary::getLikeCount)
-                            .orElse(0L);
-                    return ProductMapper.fromProduct(product, brandName, likeCount);
-                })
-                .toList();
-
-        if (condition.getSortType() == ProductSearchCondition.ProductSortType.LIKES_DESC) {
-            results = results.stream()
-                    .sorted((a, b) -> Long.compare(b.likeCount(), a.likeCount()))
-                    .toList();
-        }
-        return results;
+        // 1) 캐시 조회
+        var cached = productListCache.get(condition);
+        if (cached.isPresent()) return cached.get();
+        // 2) DB 조회
+        List<ProductListView> rows = productRepository.findListViewByCondition(condition);
+        List<ProductResult> result = rows.stream().map(ProductMapper::from).toList();
+        // 3) 캐시 저장 (빈 리스트는 저장하지 않음)
+        productListCache.put(condition, result);
+        return result;
     }
 
+    @Cacheable(cacheNames = RedisCacheConfig.CACHE_PRODUCT_DETAIL, key = "#productId", unless = "#result == null")
     @Transactional(readOnly = true)
     public ProductResult getProductDetail(Long productId) {
         Product product = productRepository.findById(productId)

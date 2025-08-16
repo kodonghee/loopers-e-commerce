@@ -12,6 +12,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.Cache;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -37,6 +39,9 @@ class ProductFacadeIntegrationTest {
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
 
+    @Autowired
+    CacheManager cacheManager;
+
     private Long brandId;
 
     @BeforeEach
@@ -48,6 +53,14 @@ class ProductFacadeIntegrationTest {
     @AfterEach
     void tearDown() {
         databaseCleanUp.truncateAllTables();
+    }
+
+    @AfterEach
+    void clearCaches() {
+        cacheManager.getCacheNames().forEach(n -> {
+            Cache c = cacheManager.getCache(n);
+            if (c != null) c.clear();
+        });
     }
 
     @Test
@@ -76,7 +89,7 @@ class ProductFacadeIntegrationTest {
         ProductCriteria criteria = new ProductCriteria("coffee", 20, new BigDecimal("4500"), brandId);
         Product savedProduct = productFacade.create(criteria);
 
-        ProductLikeSummary likeSummary = new ProductLikeSummary(savedProduct.getId());
+        ProductLikeSummary likeSummary = new ProductLikeSummary(savedProduct.getId(), brandId);
         likeSummary.increment();
         productLikeSummaryRepository.save(likeSummary);
 
@@ -152,8 +165,8 @@ class ProductFacadeIntegrationTest {
         Product product2 = productFacade.create(new ProductCriteria("bag", 5, new BigDecimal("20000"), brandId));
 
         // 상품 1에 좋아요 2개, 상품 2에 좋아요 1개
-        ProductLikeSummary likeSummary1 = new ProductLikeSummary(product1.getId());
-        ProductLikeSummary likeSummary2 = new ProductLikeSummary(product2.getId());
+        ProductLikeSummary likeSummary1 = new ProductLikeSummary(product1.getId(), brandId);
+        ProductLikeSummary likeSummary2 = new ProductLikeSummary(product2.getId(), brandId);
         likeSummary1.increment();
         likeSummary2.increment();
         likeSummary2.increment();

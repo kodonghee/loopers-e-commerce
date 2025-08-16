@@ -35,13 +35,14 @@ class LikeFacadeConcurrencyIntegrationTest {
     private DatabaseCleanUp databaseCleanUp;
 
     private final Long productId = 1L;
+    private final Long brandId = 1L;
 
     @BeforeEach
     void setUp() {
         likeJpaRepository.deleteAll();
         productLikeSummaryJpaRepository.deleteAll();
 
-        productLikeSummaryJpaRepository.save(new ProductLikeSummary(productId));
+        productLikeSummaryJpaRepository.save(new ProductLikeSummary(productId, brandId));
     }
 
     @AfterEach

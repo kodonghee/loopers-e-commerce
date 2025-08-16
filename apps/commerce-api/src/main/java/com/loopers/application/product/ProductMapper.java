@@ -2,6 +2,7 @@ package com.loopers.application.product;
 
 import com.loopers.domain.product.Money;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductListView;
 import com.loopers.domain.product.Stock;
 
 public class ProductMapper {
@@ -16,5 +17,16 @@ public class ProductMapper {
                 product.getPrice().getAmount(),
                 brandName,
                 likeCount);
+    }
+
+    public static ProductResult from(ProductListView v) {
+        return new ProductResult(
+                v.getId(),
+                v.getName(),
+                v.getStockValue(),
+                v.getPrice(),
+                v.getBrandName(),
+                v.getLikeCount()
+        );
     }
 }
