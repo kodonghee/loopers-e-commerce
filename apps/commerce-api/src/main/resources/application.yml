@@ -20,6 +20,7 @@ spring:
   config:
     import:
       - jpa.yml
+      - redis.yml
       - logging.yml
       - monitoring.yml
 
@@ -33,6 +34,22 @@ spring:
   config:
     activate:
       on-profile: local, test
+
+management:
+  server:
+    port: 8080
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      show-details: always
+logging:
+  level:
+    org.springframework.cache: TRACE
+    org.springframework.data.redis.cache: TRACE
 
 ---
 spring:

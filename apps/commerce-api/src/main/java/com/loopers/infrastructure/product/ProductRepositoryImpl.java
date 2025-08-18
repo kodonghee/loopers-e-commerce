@@ -1,6 +1,7 @@
 package com.loopers.infrastructure.product;
 
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductListView;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.ProductSearchCondition;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +51,37 @@ public class ProductRepositoryImpl implements ProductRepository {
     @Override
     public List<Product> findAllById(List<Long> ids) {
         return productJpaRepository.findAllById(ids);
+    }
+
+    @Override
+    public List<ProductListView> findListViewByCondition(ProductSearchCondition condition) {
+        int limit  = condition.getSize();
+        int offset = condition.getPage() * condition.getSize();
+        Long brandId = condition.getBrandId();
+
+        switch (condition.getSortType()) {
+            case LIKES_DESC:
+                if (brandId != null) {
+                    return productJpaRepository.findListLikesDescByBrand(brandId, limit, offset);
+                } else {
+                    return productJpaRepository.findListLikesDescGlobal(limit, offset);
+                }
+
+            case PRICE_ASC:
+                if (brandId != null) {
+                    return productJpaRepository.findListPriceAscByBrand(brandId, limit, offset);
+                } else {
+                    return productJpaRepository.findListPriceAscGlobal(limit, offset);
+                }
+
+            case LATEST:
+            default:
+                if (brandId != null) {
+                    return productJpaRepository.findListLatestByBrand(brandId, limit, offset);
+                } else {
+                    return productJpaRepository.findListLatestGlobal(limit, offset);
+                }
+        }
     }
 
 }

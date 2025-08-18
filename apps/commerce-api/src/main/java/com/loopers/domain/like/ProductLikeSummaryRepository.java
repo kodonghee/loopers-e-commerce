@@ -6,4 +6,6 @@ public interface ProductLikeSummaryRepository {
     Optional<ProductLikeSummary> findByProductId(Long productId);
     void save(ProductLikeSummary summary);
     Optional<ProductLikeSummary> findByProductIdForUpdate(Long productId);
+
+    void ensureRow(Long productId, Long brandId);
 }

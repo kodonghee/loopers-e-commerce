@@ -11,8 +11,8 @@ import java.util.Objects;
 @Table(name = "product_like", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "product_id"}))
 public class Like extends BaseEntity {
 
-    @Version
-    private Long version;
+    /*@Version
+    private Long version;*/
 
     @Column(name = "user_id", nullable = false)
     private String userId;
