@@ -4,6 +4,7 @@ include(
     ":apps:commerce-api",
     ":modules:jpa",
     ":modules:redis",
+    ":modules:pg-simulator",
     ":supports:jackson",
     ":supports:logging",
     ":supports:monitoring",
