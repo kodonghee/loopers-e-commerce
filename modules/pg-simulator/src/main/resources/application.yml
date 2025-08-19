@@ -19,15 +19,10 @@ spring:
     active: local
   config:
     import:
-      - jpa.yml
+      - pg-jpa.yml
       - redis.yml
       - logging.yml
       - monitoring.yml
-
-datasource:
-  mysql-jpa:
-    main:
-      jdbc-url: jdbc:mysql://localhost:3306/paymentgateway
 
 springdoc:
   use-fqn: true

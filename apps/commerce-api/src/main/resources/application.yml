@@ -24,6 +24,17 @@ spring:
       - logging.yml
       - monitoring.yml
 
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectionTimeout: 1000
+            readTimeout: 3000
+
+pg:
+  base-url: http://localhost:8082
+
 springdoc:
   use-fqn: true
   swagger-ui:

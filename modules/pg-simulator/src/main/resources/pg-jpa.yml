@@ -1,0 +1,27 @@
+spring:
+  jpa:
+    open-in-view: false
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        highlight_sql: true
+        jdbc.time_zone: UTC
+
+datasource:
+  mysql-jpa:
+    main:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://localhost:3306/paymentgateway
+      username: root
+      password: root
+      pool-name: mysql-pg-pool
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 3000
+      validation-timeout: 5000
+      max-lifetime: 1800000
+      data-source-properties:
+        rewriteBatchedStatements: true
