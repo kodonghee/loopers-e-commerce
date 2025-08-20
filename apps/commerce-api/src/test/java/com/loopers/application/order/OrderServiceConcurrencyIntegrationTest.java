@@ -6,6 +6,7 @@ import com.loopers.application.product.ProductCriteria;
 import com.loopers.application.product.ProductFacade;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.coupon.CouponType;
+import com.loopers.domain.order.PaymentMethod;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.user.Gender;
@@ -31,12 +32,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @DisplayName("주문 동시성 테스트")
-class OrderFacadeConcurrencyIntegrationTest {
+class OrderServiceConcurrencyIntegrationTest {
 
     @Autowired
     private CouponUseCase couponUseCase;
     @Autowired
-    private OrderFacade orderFacade;
+    private OrderService orderService;
     @Autowired
     private ProductFacade productFacade;
     @Autowired
@@ -82,7 +83,8 @@ class OrderFacadeConcurrencyIntegrationTest {
         OrderCriteria orderCriteria = new OrderCriteria(
                 USER_ID,
                 List.of(new OrderCriteria.OrderLine(product.getId(), 1, product.getPrice().getAmount())),
-                userCouponId
+                userCouponId,
+                PaymentMethod.POINTS
         );
 
         int threadCount = 100;
@@ -92,7 +94,7 @@ class OrderFacadeConcurrencyIntegrationTest {
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    orderFacade.placeOrder(orderCriteria);
+                    orderService.placeOrder(orderCriteria);
                 } catch (Exception ignored) {
                 } finally {
                     latch.countDown();
@@ -113,8 +115,8 @@ class OrderFacadeConcurrencyIntegrationTest {
         Product p2 = productFacade.create(new ProductCriteria("B", 10, new BigDecimal("100000"), brandId));
 
         List<OrderCriteria> payloads = List.of(
-                new OrderCriteria(USER_ID, List.of(new OrderCriteria.OrderLine(p1.getId(), 1, p1.getPrice().getAmount())), null),
-                new OrderCriteria(USER_ID, List.of(new OrderCriteria.OrderLine(p2.getId(), 1, p2.getPrice().getAmount())), null)
+                new OrderCriteria(USER_ID, List.of(new OrderCriteria.OrderLine(p1.getId(), 1, p1.getPrice().getAmount())), null, PaymentMethod.POINTS),
+                new OrderCriteria(USER_ID, List.of(new OrderCriteria.OrderLine(p2.getId(), 1, p2.getPrice().getAmount())), null, PaymentMethod.POINTS)
         );
 
         int threadCount = 100;
@@ -124,7 +126,7 @@ class OrderFacadeConcurrencyIntegrationTest {
         for (int i = 0; i < threadCount; i++) {
             OrderCriteria c = payloads.get(i % payloads.size());
             es.submit(() -> {
-                try { orderFacade.placeOrder(c); } catch (Exception ignored) {}
+                try { orderService.placeOrder(c); } catch (Exception ignored) {}
                 finally { latch.countDown(); }
             });
         }
@@ -153,7 +155,8 @@ class OrderFacadeConcurrencyIntegrationTest {
         OrderCriteria payload = new OrderCriteria(
                 USER_ID,
                 List.of(new OrderCriteria.OrderLine(product.getId(), 1, product.getPrice().getAmount())),
-                null
+                null,
+                PaymentMethod.POINTS
         );
 
         ExecutorService es = Executors.newFixedThreadPool(threadCount);
@@ -162,7 +165,7 @@ class OrderFacadeConcurrencyIntegrationTest {
         for (int i = 0; i < threadCount; i++) {
             es.submit(() -> {
                 try {
-                    orderFacade.placeOrder(payload);
+                    orderService.placeOrder(payload);
                 } catch (Exception ignored) {
                 } finally {
                     latch.countDown();

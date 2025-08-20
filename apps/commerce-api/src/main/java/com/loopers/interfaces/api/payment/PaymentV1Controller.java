@@ -1,7 +1,7 @@
 package com.loopers.interfaces.api.payment;
 
 import com.loopers.application.payment.PaymentCriteria;
-import com.loopers.application.payment.PaymentFacade;
+import com.loopers.application.payment.PaymentService;
 import com.loopers.application.payment.PaymentResult;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/payments")
 public class PaymentV1Controller implements PaymentV1ApiSpec {
 
-    private final PaymentFacade paymentFacade;
+    private final PaymentService paymentService;
 
     @PostMapping
     @Override
@@ -28,7 +28,7 @@ public class PaymentV1Controller implements PaymentV1ApiSpec {
                 request.amount()
         );
 
-        PaymentResult result = paymentFacade.request(criteria);
+        PaymentResult result = paymentService.request(criteria);
         return ApiResponse.success(PaymentV1Dto.PaymentResponse.from(result));
     }
 
@@ -38,7 +38,7 @@ public class PaymentV1Controller implements PaymentV1ApiSpec {
             @RequestHeader("X-USER-ID") String userId,
             @PathVariable String orderId
     ) {
-        PaymentResult result = paymentFacade.findByOrderId(userId, orderId);
+        PaymentResult result = paymentService.findByOrderId(userId, orderId);
         return ApiResponse.success(PaymentV1Dto.PaymentResponse.from(result));
     }
 }

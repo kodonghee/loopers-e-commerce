@@ -2,9 +2,9 @@ rootProject.name = "loopers-donghee"
 
 include(
     ":apps:commerce-api",
+    ":apps:pg-simulator",
     ":modules:jpa",
     ":modules:redis",
-    ":modules:pg-simulator",
     ":supports:jackson",
     ":supports:logging",
     ":supports:monitoring",

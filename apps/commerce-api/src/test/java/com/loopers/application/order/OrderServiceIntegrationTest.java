@@ -9,6 +9,7 @@ import com.loopers.domain.brand.Brand;
 import com.loopers.domain.coupon.CouponRepository;
 import com.loopers.domain.coupon.CouponType;
 import com.loopers.domain.order.OrderRepository;
+import com.loopers.domain.order.PaymentMethod;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.product.Product;
@@ -32,10 +33,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
 @SpringBootTest
-class OrderFacadeIntegrationTest {
+class OrderServiceIntegrationTest {
 
     @Autowired
-    private OrderFacade orderFacade;
+    private OrderService orderService;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -91,11 +92,12 @@ class OrderFacadeIntegrationTest {
             OrderCriteria criteria = new OrderCriteria(
                     USER_ID,
                     List.of(new OrderCriteria.OrderLine(product.getId(), 2, product.getPrice().getAmount())),
-                    userCouponId
+                    userCouponId,
+                    PaymentMethod.POINTS
             );
 
             // act
-            OrderResult orderResult = orderFacade.placeOrder(criteria);
+            OrderResult orderResult = orderService.placeOrder(criteria);
 
             // assert
             assertThat(orderResult.totalAmount()).isEqualTo(new BigDecimal("200000"));
@@ -114,10 +116,11 @@ class OrderFacadeIntegrationTest {
             OrderCriteria criteria = new OrderCriteria(
                     USER_ID,
                     List.of(new OrderCriteria.OrderLine(invalidProductId, 1, new BigDecimal("100000"))),
-                    null
+                    null,
+                    PaymentMethod.POINTS
             );
 
-            Throwable thrown = catchThrowable(() -> orderFacade.placeOrder(criteria));
+            Throwable thrown = catchThrowable(() -> orderService.placeOrder(criteria));
 
             assertThat(thrown).isInstanceOf(CoreException.class);
             assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())
@@ -137,11 +140,12 @@ class OrderFacadeIntegrationTest {
             OrderCriteria criteria = new OrderCriteria(
                     USER_ID,
                     List.of(new OrderCriteria.OrderLine(product.getId(), 2, product.getPrice().getAmount())),
-                    userCouponId
+                    userCouponId,
+                    PaymentMethod.POINTS
             );
 
             // act
-            Throwable thrown = catchThrowable(() -> orderFacade.placeOrder(criteria));
+            Throwable thrown = catchThrowable(() -> orderService.placeOrder(criteria));
 
             // assert
             assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
@@ -164,11 +168,12 @@ class OrderFacadeIntegrationTest {
             OrderCriteria criteria = new OrderCriteria(
                     USER_ID,
                     List.of(new OrderCriteria.OrderLine(product.getId(), 2, product.getPrice().getAmount())),
-                    userCouponId
+                    userCouponId,
+                    PaymentMethod.POINTS
             );
 
             // act
-            Throwable thrown = catchThrowable(() -> orderFacade.placeOrder(criteria));
+            Throwable thrown = catchThrowable(() -> orderService.placeOrder(criteria));
 
             // assert
             assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
@@ -197,11 +202,12 @@ class OrderFacadeIntegrationTest {
             OrderCriteria criteria = new OrderCriteria(
                     USER_ID,
                     List.of(new OrderCriteria.OrderLine(product.getId(), 1, product.getPrice().getAmount())),
-                    otherUserCouponId
+                    otherUserCouponId,
+                    PaymentMethod.POINTS
             );
 
             // act
-            Throwable thrown = catchThrowable(() -> orderFacade.placeOrder(criteria));
+            Throwable thrown = catchThrowable(() -> orderService.placeOrder(criteria));
 
             // assert
             assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
@@ -225,11 +231,12 @@ class OrderFacadeIntegrationTest {
             OrderCriteria criteria = new OrderCriteria(
                     USER_ID,
                     List.of(new OrderCriteria.OrderLine(product.getId(), 1, product.getPrice().getAmount())),
-                    invalidCouponId
+                    invalidCouponId,
+                    PaymentMethod.POINTS
             );
 
             // act
-            Throwable thrown = catchThrowable(() -> orderFacade.placeOrder(criteria));
+            Throwable thrown = catchThrowable(() -> orderService.placeOrder(criteria));
 
             // assert
             assertThat(thrown).isInstanceOf(CoreException.class);
@@ -253,18 +260,20 @@ class OrderFacadeIntegrationTest {
             OrderCriteria firstOrder = new OrderCriteria(
                     USER_ID,
                     List.of(new OrderCriteria.OrderLine(product.getId(), 1, product.getPrice().getAmount())),
-                    userCouponId
+                    userCouponId,
+                    PaymentMethod.POINTS
             );
-            orderFacade.placeOrder(firstOrder);
+            orderService.placeOrder(firstOrder);
 
             OrderCriteria secondOrder = new OrderCriteria(
                     USER_ID,
                     List.of(new OrderCriteria.OrderLine(product.getId(), 1, product.getPrice().getAmount())),
-                    userCouponId
+                    userCouponId,
+                    PaymentMethod.POINTS
             );
 
             // act
-            Throwable thrown = catchThrowable(() -> orderFacade.placeOrder(secondOrder));
+            Throwable thrown = catchThrowable(() -> orderService.placeOrder(secondOrder));
 
             // assert
             assertThat(thrown).isInstanceOf(IllegalStateException.class);
@@ -291,12 +300,13 @@ class OrderFacadeIntegrationTest {
             OrderCriteria criteria = new OrderCriteria(
                     USER_ID,
                     List.of(new OrderCriteria.OrderLine(product.getId(), 1, product.getPrice().getAmount())),
-                    null
+                    null,
+                    PaymentMethod.POINTS
             );
-            OrderResult createdOrder = orderFacade.placeOrder(criteria);
+            OrderResult createdOrder = orderService.placeOrder(criteria);
 
             // act
-            List<OrderResult> resultList = orderFacade.getOrderList(new UserId(USER_ID));
+            List<OrderResult> resultList = orderService.getOrderList(new UserId(USER_ID));
 
             // assert
             assertThat(resultList).hasSize(1);
@@ -322,12 +332,13 @@ class OrderFacadeIntegrationTest {
             OrderCriteria criteria = new OrderCriteria(
                     USER_ID,
                     List.of(new OrderCriteria.OrderLine(product.getId(), 2, product.getPrice().getAmount())),
-                    null
+                    null,
+                    PaymentMethod.POINTS
             );
-            OrderResult createdOrder = orderFacade.placeOrder(criteria);
+            OrderResult createdOrder = orderService.placeOrder(criteria);
 
             // act
-            OrderResult result = orderFacade.getOrderDetail(createdOrder.orderId());
+            OrderResult result = orderService.getOrderDetail(createdOrder.orderId());
 
             // assert
             assertThat(result.orderId()).isEqualTo(createdOrder.orderId());

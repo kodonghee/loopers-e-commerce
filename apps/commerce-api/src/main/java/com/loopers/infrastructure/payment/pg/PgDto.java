@@ -9,13 +9,13 @@ public final class PgDto {
             String orderId,
             String cardType,
             String cardNo,
-            String amount,
+            BigDecimal amount,
             String callbackUrl
     ) {}
 
     public static record Response(
-            String paymentId,
             String orderId,
+            String paymentId,
             String status
     ) {}
 }

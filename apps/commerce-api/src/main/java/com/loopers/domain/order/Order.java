@@ -11,11 +11,12 @@ import java.util.List;
 @Table(name = "orders")
 public class Order extends BaseEntity {
 
+    @Column(nullable = false)
     private String userId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
-    private OrderStatus status = OrderStatus.CREATED;
+    private OrderStatus status = OrderStatus.AWAITING_PAYMENT;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
@@ -27,9 +28,15 @@ public class Order extends BaseEntity {
 
     protected Order() {}
 
-    public Order(String userId, List<OrderItem> items) {
+    private Order(String userId, List<OrderItem> items, PaymentMethod paymentMethod) {
         this.userId = userId;
+        this.paymentMethod = paymentMethod;
         this.orderItems.addAll(items);
+        this.status = OrderStatus.AWAITING_PAYMENT;
+    }
+
+    public static Order createPending(String userId, PaymentMethod paymentMethod, List<OrderItem> items) {
+        return new Order(userId, items, paymentMethod);
     }
 
     public Long getOrderId() { return id; }
@@ -47,8 +54,9 @@ public class Order extends BaseEntity {
     }
 
     public void markAwaitingPayment() { this.status = OrderStatus.AWAITING_PAYMENT; }
-    public void markPaid()            { this.status = OrderStatus.PAID; }
+    public void markPaid() { this.status = OrderStatus.PAID; }
     public void markPaymentFailed()   { this.status = OrderStatus.PAYMENT_FAILED; }
+    public void markCancelled() {this.status = OrderStatus.CANCELLED; }
 
     public OrderStatus getStatus() { return status; }
     public PaymentMethod getPaymentMethod() { return paymentMethod; }
