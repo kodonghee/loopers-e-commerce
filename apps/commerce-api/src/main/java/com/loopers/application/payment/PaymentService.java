@@ -13,8 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
-import static java.lang.Long.valueOf;
-
 @RequiredArgsConstructor
 @Service
 public class PaymentService {
@@ -28,7 +26,6 @@ public class PaymentService {
 
     @Retry(name = "pgClient")
     @CircuitBreaker(name = "pgClient", fallbackMethod = "fallbackPayment")
-    @TimeLimiter(name = "pgClient")
     public PaymentResult requestCardPayment(PaymentCriteria criteria) {
         BigDecimal finalAmount = orderService.prepareForPayment(Long.valueOf(criteria.orderId()), criteria.couponId());
         var req = new PaymentGateway.Request(
