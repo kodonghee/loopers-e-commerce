@@ -3,6 +3,7 @@ package com.loopers.interfaces.api.payment;
 import com.loopers.application.payment.PaymentCriteria;
 import com.loopers.application.payment.PaymentService;
 import com.loopers.application.payment.PaymentResult;
+import com.loopers.domain.order.PaymentMethod;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -25,10 +26,14 @@ public class PaymentV1Controller implements PaymentV1ApiSpec {
                 request.orderId(),
                 request.cardType(),
                 request.cardNo(),
-                request.amount()
+                request.amount(),
+                request.couponId()
         );
 
-        PaymentResult result = paymentService.request(criteria);
+        PaymentResult result = (request.paymentMethod() == PaymentMethod.POINTS)
+                ? paymentService.processPointPayment(criteria)
+                : paymentService.requestCardPayment(criteria);
+
         return ApiResponse.success(PaymentV1Dto.PaymentResponse.from(result));
     }
 
@@ -40,5 +45,11 @@ public class PaymentV1Controller implements PaymentV1ApiSpec {
     ) {
         PaymentResult result = paymentService.findByOrderId(userId, orderId);
         return ApiResponse.success(PaymentV1Dto.PaymentResponse.from(result));
+    }
+
+    @PostMapping("/callback")
+    @Override
+    public void handleCallback(@RequestBody PaymentV1Dto.PaymentCallbackRequest request) {
+        paymentService.handlePgCallback(request.toCallback());
     }
 }

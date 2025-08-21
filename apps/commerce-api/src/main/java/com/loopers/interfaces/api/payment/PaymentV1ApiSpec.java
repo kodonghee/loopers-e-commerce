@@ -9,16 +9,22 @@ import org.springframework.web.bind.annotation.*;
 public interface PaymentV1ApiSpec {
 
     @Operation(summary = "결제 요청")
-    @PostMapping("/payments")
+    @GetMapping("/payments")
     ApiResponse<PaymentV1Dto.PaymentResponse> requestPayment(
             @RequestHeader("X-USER-ID") String userId,
             @RequestBody PaymentV1Dto.PaymentRequest request
     );
 
     @Operation(summary = "주문 ID로 결제 조회")
-    @GetMapping("/payments")
+    @GetMapping("/payments/{orderId}")
     ApiResponse<PaymentV1Dto.PaymentResponse> findByOrderId(
             @RequestHeader("X-USER-ID") String userId,
-            @PathVariable("paymentId") String paymentId
+            @PathVariable("paymentId") String orderId
+    );
+
+    @Operation(summary = "callback 요청")
+    @PostMapping("/payments/callback")
+    void handleCallback(
+            @RequestBody PaymentV1Dto.PaymentCallbackRequest request
     );
 }

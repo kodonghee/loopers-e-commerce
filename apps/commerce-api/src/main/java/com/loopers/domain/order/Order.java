@@ -26,6 +26,9 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "order_id")
     private List<OrderItem> orderItems = new ArrayList<>();
 
+    @Column(name = "final_amount", nullable = false)
+    private BigDecimal finalAmount;
+
     protected Order() {}
 
     private Order(String userId, List<OrderItem> items, PaymentMethod paymentMethod) {
@@ -33,9 +36,10 @@ public class Order extends BaseEntity {
         this.paymentMethod = paymentMethod;
         this.orderItems.addAll(items);
         this.status = OrderStatus.AWAITING_PAYMENT;
+        this.finalAmount = getTotalAmount();
     }
 
-    public static Order createPending(String userId, PaymentMethod paymentMethod, List<OrderItem> items) {
+    public static Order createPending(String userId, List<OrderItem> items, PaymentMethod paymentMethod) {
         return new Order(userId, items, paymentMethod);
     }
 
@@ -52,6 +56,19 @@ public class Order extends BaseEntity {
                 .map(OrderItem::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
+
+    public void applyDiscount(BigDecimal discountAmount) {
+        if (discountAmount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("할인 금액은 음수가 될 수 없습니다.");
+        }
+
+        if (discountAmount.compareTo(getTotalAmount()) > 0) {
+            throw new IllegalArgumentException("할인 금액은 주문 금액을 초과할 수 없습니다.");
+        }
+        this.finalAmount = this.getFinalAmount().subtract(discountAmount);
+    }
+
+    public BigDecimal getFinalAmount() { return finalAmount; }
 
     public void markAwaitingPayment() { this.status = OrderStatus.AWAITING_PAYMENT; }
     public void markPaid() { this.status = OrderStatus.PAID; }

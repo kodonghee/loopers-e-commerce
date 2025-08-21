@@ -33,7 +33,7 @@ class CouponTest {
         coupon.markAsUsed();
 
         // act & assert
-        assertThatThrownBy(() -> coupon.applyCoupon(new BigDecimal("30000")))
+        assertThatThrownBy(() -> coupon.calculateDiscount(new BigDecimal("30000")))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("이미 사용된 쿠폰입니다.");
     }
@@ -59,10 +59,11 @@ class CouponTest {
         BigDecimal orderAmount = new BigDecimal("30000");
 
         // act
-        BigDecimal discountedAmount = coupon.applyCoupon(orderAmount);
+        BigDecimal discountAmount = coupon.calculateDiscount(orderAmount);
+        BigDecimal finalAmount = orderAmount.subtract(discountAmount);
 
         // assert
-        assertThat(discountedAmount).isEqualByComparingTo("20000");
+        assertThat(finalAmount).isEqualByComparingTo("20000");
     }
 
     @DisplayName("주문 금액에 정률 쿠폰을 적용하면 해당 금액만큼 할인된다.")
@@ -73,10 +74,11 @@ class CouponTest {
         BigDecimal orderAmount = new BigDecimal("30000");
 
         // act
-        BigDecimal discountedAmount = coupon.applyCoupon(orderAmount);
+        BigDecimal discountAmount = coupon.calculateDiscount(orderAmount);
+        BigDecimal finalAmount = orderAmount.subtract(discountAmount);
 
         // assert
-        assertThat(discountedAmount).isEqualByComparingTo("27000");
+        assertThat(finalAmount).isEqualByComparingTo("27000");
     }
 
     @ParameterizedTest(name = "couponAmount={0}, orderAmount={1} -> 결제 금액은 0원")
@@ -92,10 +94,11 @@ class CouponTest {
         BigDecimal orderAmount = new BigDecimal(orderStr);
 
         // act
-        BigDecimal discountedAmount = coupon.applyCoupon(orderAmount);
+        BigDecimal discountAmount = coupon.calculateDiscount(orderAmount);
+        BigDecimal finalAmount = orderAmount.subtract(discountAmount);
 
         // assert
-        assertThat(discountedAmount).isEqualByComparingTo("0");
+        assertThat(finalAmount).isEqualByComparingTo("0");
     }
 
     @DisplayName("정률 쿠폰의 할인 금액은 소수점 이하를 버림하여 계산한다.")
@@ -106,9 +109,10 @@ class CouponTest {
         BigDecimal orderAmount = new BigDecimal("3960");
 
         // act
-        BigDecimal discountedAmount = coupon.applyCoupon(orderAmount); // 3960 - 1306 (3960 * 0.33 -> 버림 처리)
+        BigDecimal discountAmount = coupon.calculateDiscount(orderAmount);
+        BigDecimal finalAmount = orderAmount.subtract(discountAmount);
 
         // assert
-        assertThat(discountedAmount).isEqualByComparingTo("2654");
+        assertThat(finalAmount).isEqualByComparingTo("2654");
     }
 }

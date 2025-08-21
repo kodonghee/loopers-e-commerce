@@ -1,5 +1,6 @@
 package com.loopers.domain.order;
 
+import com.loopers.application.payment.PaymentMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,9 +26,10 @@ class OrderTest {
                     new OrderItem(1L, 2, new BigDecimal("1000")),
                     new OrderItem(2L, 1, new BigDecimal("500"))
             );
+            PaymentMethod paymentMethod = PaymentMethod.POINTS;
 
             // Act & Assert
-            assertDoesNotThrow(() -> new Order(userId, orderItems));
+            assertDoesNotThrow(() -> Order.createPending(userId, orderItems, paymentMethod));
         }
 
         @Test
@@ -39,7 +41,8 @@ class OrderTest {
                     new OrderItem(1L, 2, new BigDecimal("1000")),
                     new OrderItem(2L, 1, new BigDecimal("500"))
             );
-            Order order = new Order(userId, orderItems);
+            PaymentMethod paymentMethod = PaymentMethod.POINTS;
+            Order order = Order.createPending(userId, orderItems, paymentMethod);
 
             // Act
             BigDecimal totalAmount = order.getTotalAmount();

@@ -7,6 +7,7 @@ public record PaymentCriteria(
     String orderId,
     String cardType,
     String cardNo,
-    BigDecimal amount
+    BigDecimal amount,
+    Long couponId
 
     ) { }

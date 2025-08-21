@@ -11,7 +11,7 @@ public class OrderMapper {
         List<OrderItem> items = criteria.items().stream()
                 .map(item -> new OrderItem(item.productId(), item.quantity(), item.price()))
                 .toList();
-        return new Order(criteria.userId(), items);
+        return Order.createPending(criteria.userId(), items, criteria.paymentMethod());
     }
 
     public static OrderResult fromOrder(Order order) {

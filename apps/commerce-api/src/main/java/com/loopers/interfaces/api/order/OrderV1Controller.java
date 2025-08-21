@@ -3,7 +3,6 @@ package com.loopers.interfaces.api.order;
 import com.loopers.application.order.OrderCriteria;
 import com.loopers.application.order.OrderService;
 import com.loopers.application.order.OrderResult;
-import com.loopers.application.order.port.OrderEventSender;
 import com.loopers.domain.order.PaymentMethod;
 import com.loopers.domain.user.UserId;
 import com.loopers.interfaces.api.ApiResponse;
@@ -18,7 +17,6 @@ import java.util.List;
 public class OrderV1Controller implements OrderV1ApiSpec {
 
     private final OrderService orderService;
-    private final OrderEventSender orderEventSender;
 
     @PostMapping
     @Override
@@ -34,8 +32,7 @@ public class OrderV1Controller implements OrderV1ApiSpec {
                 request.getCouponId(),
                 PaymentMethod.valueOf(request.getPaymentMethod())
         );
-        OrderResult orderResult = orderService.placeOrder(criteria);
-        orderEventSender.send(orderResult.orderId());
+        OrderResult orderResult = orderService.createPendingOrder(criteria);
         return ApiResponse.success(OrderV1Dto.OrderResponse.from(orderResult).orderId());
     }
 

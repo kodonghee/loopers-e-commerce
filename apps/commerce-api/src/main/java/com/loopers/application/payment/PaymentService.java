@@ -2,22 +2,21 @@ package com.loopers.application.payment;
 
 import com.loopers.application.order.OrderService;
 import com.loopers.application.payment.port.PaymentGateway;
-import com.loopers.domain.coupon.CouponRepository;
 import com.loopers.domain.point.PointRepository;
-import com.loopers.domain.product.ProductRepository;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.core.converters.PageableOpenAPIConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+
+import static java.lang.Long.valueOf;
 
 @RequiredArgsConstructor
 @Service
 public class PaymentService {
 
     private final PaymentGateway gateway;
-    private final ProductRepository productRepository;
-    private final CouponRepository couponRepository;
     private final PointRepository pointRepository;
     private final OrderService orderService;
 
@@ -25,10 +24,11 @@ public class PaymentService {
     private String callbackUrl;
 
     public PaymentResult requestCardPayment(PaymentCriteria criteria) {
+        BigDecimal finalAmount = orderService.prepareForPayment(Long.valueOf(criteria.orderId()), criteria.couponId());
         var req = new PaymentGateway.Request(
                 criteria.userId(), criteria.orderId(),
                 criteria.cardType(), criteria.cardNo(),
-                criteria.amount(), callbackUrl
+                finalAmount, callbackUrl
         );
         var result = gateway.request(req);
         return new PaymentResult(result.orderId(), result.paymentId(), result.status());
@@ -36,31 +36,36 @@ public class PaymentService {
 
     @Transactional
     public PaymentResult processPointPayment(PaymentCriteria criteria) {
-        var point = pointRepository.findByUserIdForUpdate(criteria.userId())
-                .orElseThrow();
-        point.use(criteria.amount());
+        try {
+            BigDecimal finalAmount = orderService.prepareForPayment(Long.valueOf(criteria.orderId()), criteria.couponId());
 
-        orderService.markOrderPaid(Long.valueOf(criteria.orderId()));
-        return PaymentResult.success(criteria.orderId());
+            var point = pointRepository.findByUserIdForUpdate(criteria.userId())
+                    .orElseThrow();
+            point.use(finalAmount);
+
+            orderService.confirmPayment(Long.valueOf(criteria.orderId()), criteria.couponId());
+            return PaymentResult.success(criteria.orderId());
+        } catch (Exception e) {
+            orderService.markOrderFailed(Long.valueOf(criteria.orderId()));
+            throw e;
+        }
     }
 
     @Transactional
-    public void handlePgCallback(PaymentCallbackDto callback) {
+    public void handlePgCallback(PaymentCallback callback) {
+        var order = orderService.getOrderDetail(Long.valueOf(callback.orderId()));
+
+        if (!order.totalAmount().equals(callback.amount())) {
+            orderService.markOrderFailed(Long.valueOf(callback.orderId()));
+            throw new IllegalStateException("결제 금액 불일치: 주문 금액=" + order.totalAmount() + ", PG 금액=" + callback.amount());
+        }
+
         if ("SUCCESS".equals(callback.status())) {
-            orderService.markOrderPaid(Long.valueOf(callback.orderId()));
+            orderService.confirmPayment(
+                    Long.valueOf(callback.orderId()),
+                    callback.couponId()
+            );
 
-            productRepository.decreaseStock(callback.items());
-
-            if (callback.couponId() != null) {
-                var coupon = couponRepository.findByIdForUpdate(callback.couponId()).orElseThrow();
-                coupon.checkOwner(callback.userId());
-                coupon.markAsUsed();
-            }
-
-            if (callback.usePoint()) {
-                var point = pointRepository.findByUserIdForUpdate(callback.userId()).orElseThrow();
-                point.use(callback.amount());
-            }
         } else {
             orderService.markOrderFailed(Long.valueOf(callback.orderId()));
         }
