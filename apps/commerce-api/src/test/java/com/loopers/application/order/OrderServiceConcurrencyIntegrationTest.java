@@ -145,6 +145,7 @@ class OrderServiceConcurrencyIntegrationTest {
                     PaymentCriteria paymentCriteria = new PaymentCriteria(
                             USER_ID,
                             order.orderId().toString(),
+                            order.pgOrderId(),
                             null,
                             null,
                             order.totalAmount(),

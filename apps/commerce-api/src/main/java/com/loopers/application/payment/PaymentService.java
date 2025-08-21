@@ -3,6 +3,9 @@ package com.loopers.application.payment;
 import com.loopers.application.order.OrderService;
 import com.loopers.application.payment.port.PaymentGateway;
 import com.loopers.domain.point.PointRepository;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -20,18 +23,25 @@ public class PaymentService {
     private final PointRepository pointRepository;
     private final OrderService orderService;
 
-    @Value("${pg.callback-url:http://localhost:8080/api/v1/pg/callback}")
+    @Value("${pg.callback-url:http://localhost:8080/api/v1/payments/callback}")
     private String callbackUrl;
 
+    @Retry(name = "pgClient")
+    @CircuitBreaker(name = "pgClient", fallbackMethod = "fallbackPayment")
+    @TimeLimiter(name = "pgClient")
     public PaymentResult requestCardPayment(PaymentCriteria criteria) {
         BigDecimal finalAmount = orderService.prepareForPayment(Long.valueOf(criteria.orderId()), criteria.couponId());
         var req = new PaymentGateway.Request(
-                criteria.userId(), criteria.orderId(),
+                criteria.userId(), criteria.pgOrderId(),
                 criteria.cardType(), criteria.cardNo(),
                 finalAmount, callbackUrl
         );
         var result = gateway.request(req);
-        return new PaymentResult(result.orderId(), result.paymentId(), result.status());
+        return new PaymentResult(criteria.pgOrderId(), result.paymentId(), result.status());
+    }
+
+    private PaymentResult fallbackPayment(PaymentCriteria criteria, Throwable t) {
+        return new PaymentResult(criteria.pgOrderId(), null, "PENDING");
     }
 
     @Transactional

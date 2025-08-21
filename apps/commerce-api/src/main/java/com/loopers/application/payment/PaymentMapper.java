@@ -9,7 +9,7 @@ public class PaymentMapper {
         return new PgDto.Request(criteria.orderId(), criteria.cardType(), criteria.cardNo(), criteria.amount(), callbackUrl);
     }
 
-    static PaymentResult toResult(PgDto.Response response) {
-        return new PaymentResult(response.orderId(), response.paymentId(), response.status());
+    static PaymentResult toResult(String orderId, PgDto.Response response) {
+        return new PaymentResult(orderId, response.transactionKey(), response.status());
     }
 }

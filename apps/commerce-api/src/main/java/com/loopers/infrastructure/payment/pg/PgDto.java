@@ -13,9 +13,16 @@ public final class PgDto {
             String callbackUrl
     ) {}
 
+    public static record ResponseWrapper(
+            Meta meta,
+            Data data
+    ) {
+        public static record Meta(String result, String errorCode, String message) {}
+        public static record Data(String transactionKey, String status) {}
+    }
+
     public static record Response(
-            String orderId,
-            String paymentId,
+            String transactionKey,
             String status
     ) {}
 }

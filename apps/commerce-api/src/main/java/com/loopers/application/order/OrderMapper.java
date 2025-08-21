@@ -22,6 +22,6 @@ public class OrderMapper {
                         item.getPrice()
                 ))
                 .toList();
-        return new OrderResult(order.getOrderId(), order.getUserId(), order.getTotalAmount(), items);
+        return new OrderResult(order.getOrderId(), order.getPgOrderId(), order.getUserId(), order.getTotalAmount(), items);
     }
 }

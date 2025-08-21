@@ -5,6 +5,7 @@ import java.util.List;
 
 public record OrderResult(
         Long orderId,
+        String pgOrderId,
         String userId,
         BigDecimal totalAmount,
         List<OrderItemResult> items

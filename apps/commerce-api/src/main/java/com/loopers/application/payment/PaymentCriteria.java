@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 public record PaymentCriteria(
     String userId,
     String orderId,
+    String pgOrderId,
     String cardType,
     String cardNo,
     BigDecimal amount,

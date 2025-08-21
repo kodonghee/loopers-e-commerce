@@ -10,7 +10,8 @@ import java.math.BigDecimal;
 public class PaymentV1Dto {
 
     public record PaymentRequest(
-            @Schema(example = "1351039135") String orderId,
+            @Schema(example = "1L") String orderId,
+            @Schema(example = "1234567") String pgOrderId,
             @Schema(example = "POINTS or CARD") PaymentMethod paymentMethod,
             @Schema(example = "SAMSUNG") String cardType,
             @Schema(example = "1234-5678-9814-1451") String cardNo,

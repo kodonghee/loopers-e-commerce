@@ -103,6 +103,7 @@ class OrderServiceIntegrationTest {
             PaymentCriteria paymentCriteria = new PaymentCriteria(
                     USER_ID,
                     orderResult.orderId().toString(),
+                    orderResult.pgOrderId(),
                     null,
                     null,
                     orderResult.totalAmount(),
@@ -161,6 +162,7 @@ class OrderServiceIntegrationTest {
             PaymentCriteria paymentCriteria = new PaymentCriteria(
                     USER_ID,
                     order.orderId().toString(),
+                    order.pgOrderId(),
                     null,   // 카드 정보 없음
                     null,
                     order.totalAmount(),
@@ -199,6 +201,7 @@ class OrderServiceIntegrationTest {
             PaymentCriteria paymentCriteria = new PaymentCriteria(
                     USER_ID,
                     order.orderId().toString(),
+                    order.pgOrderId(),
                     null,   // 카드 정보 없음
                     null,
                     order.totalAmount(),
@@ -245,6 +248,7 @@ class OrderServiceIntegrationTest {
             PaymentCriteria paymentCriteria = new PaymentCriteria(
                     USER_ID,
                     order.orderId().toString(),
+                    order.pgOrderId(),
                     null,
                     null,
                     order.totalAmount(),
@@ -285,6 +289,7 @@ class OrderServiceIntegrationTest {
             PaymentCriteria paymentCriteria = new PaymentCriteria(
                     USER_ID,
                     order.orderId().toString(),
+                    order.pgOrderId(),
                     null,
                     null,
                     order.totalAmount(),
@@ -324,6 +329,7 @@ class OrderServiceIntegrationTest {
             PaymentCriteria firstPaymentCriteria = new PaymentCriteria(
                     USER_ID,
                     firstOrder.orderId().toString(),
+                    firstOrder.pgOrderId(),
                     null,
                     null,
                     firstOrder.totalAmount(),
@@ -342,6 +348,7 @@ class OrderServiceIntegrationTest {
             PaymentCriteria secondPaymentCriteria = new PaymentCriteria(
                     USER_ID,
                     secondOrder.orderId().toString(),
+                    secondOrder.pgOrderId(),
                     null,
                     null,
                     secondOrder.totalAmount(),
