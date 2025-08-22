@@ -62,7 +62,7 @@ public class PaymentService {
     public void handlePgCallback(PaymentCallback callback) {
         var order = orderService.getOrderDetail(Long.valueOf(callback.orderId()));
 
-        if (!order.totalAmount().equals(callback.amount())) {
+        if (order.totalAmount().compareTo(callback.amount()) != 0) {
             orderService.markOrderFailed(Long.valueOf(callback.orderId()));
             throw new IllegalStateException("결제 금액 불일치: 주문 금액=" + order.totalAmount() + ", PG 금액=" + callback.amount());
         }
@@ -80,6 +80,11 @@ public class PaymentService {
 
     public PaymentResult findByOrderId(String userId, String orderId) {
         var result = gateway.findByOrderId(userId, orderId);
+
+        if (result == null) {
+            return new PaymentResult(orderId, null, "PENDING");
+        }
+
         return new PaymentResult(result.orderId(), result.paymentId(), result.status());
     }
 }

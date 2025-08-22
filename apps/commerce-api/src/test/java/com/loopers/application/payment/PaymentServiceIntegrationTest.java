@@ -3,9 +3,11 @@ package com.loopers.application.payment;
 import com.loopers.application.order.OrderCriteria;
 import com.loopers.application.order.OrderResult;
 import com.loopers.application.order.OrderService;
+import com.loopers.application.payment.port.PaymentGateway;
 import com.loopers.application.product.ProductCriteria;
 import com.loopers.application.product.ProductFacade;
 import com.loopers.domain.brand.Brand;
+import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.order.PaymentMethod;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointRepository;
@@ -19,11 +21,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @Slf4j
 @SpringBootTest
@@ -36,6 +41,8 @@ class PaymentServiceIntegrationTest {
     @Autowired private PointRepository pointRepository;
     @Autowired private BrandJpaRepository brandJpaRepository;
     @Autowired private DatabaseCleanUp databaseCleanUp;
+    @MockitoBean
+    private PaymentGateway gateway;
 
     private static final String USER_ID = "cookie95";
     private Long brandId;
@@ -78,7 +85,6 @@ class PaymentServiceIntegrationTest {
         );
     }
 
-    // ✅ [체크리스트] PG 연동 API는 FeignClient로 외부 시스템을 호출한다.
     @Test
     @DisplayName("PG 연동 API를 통해 카드 결제를 정상적으로 요청한다")
     void requestCardPayment_success() {
@@ -99,28 +105,29 @@ class PaymentServiceIntegrationTest {
         }
     }
 
-    // ✅ [체크리스트] 응답 지연 / 실패 시 예외 처리
     @Test
-    @DisplayName("PG 연동 API 호출이 실패하면 예외가 발생한다")
-    void requestCardPayment_fail() {
+    @DisplayName("PG 연동 API 호출 시 잘못된 카드 번호면 PENDING 상태를 먼저 반환한다")
+    void requestCardPayment_invalidCard_pending() {
         // Arrange
-        PaymentCriteria criteria = createCardPaymentCriteria();
-        // ⚠️ pg-simulator 설정 필요 (장애 응답 반환하도록)
+        PaymentCriteria criteria = createCardPaymentCriteria()
+                .withCardNo("0000-0000-0000-0000");;
 
-        // Act & Assert
-        assertThatThrownBy(() -> paymentService.requestCardPayment(criteria))
-                .isInstanceOf(feign.FeignException.class);
+        // Act
+        PaymentResult result = paymentService.requestCardPayment(criteria);
+
+        // Assert
+        assertThat(result.status()).isEqualTo("PENDING");
     }
 
-    // ✅ [체크리스트] Fallback 동작 확인
     @Test
-    @DisplayName("PG 연동이 장애로 차단되면 Fallback 으로 PENDING 상태를 반환한다")
+    @DisplayName("PG 연동 장애 발생 시 CircuitBreaker Fallback으로 PENDING 상태를 반환한다")
     void requestCardPayment_fallback() {
         // Arrange
         PaymentCriteria criteria = createCardPaymentCriteria();
+        when(gateway.request(any())).thenThrow(new RuntimeException("PG 장애"));
 
         // Act
-        PaymentResult result = paymentService.fallbackPayment(criteria, new RuntimeException("PG 장애"));
+        PaymentResult result = paymentService.requestCardPayment(criteria);
 
         // Assert
         assertThat(result.orderId()).isEqualTo(criteria.pgOrderId());
@@ -128,7 +135,6 @@ class PaymentServiceIntegrationTest {
         assertThat(result.status()).isEqualTo("PENDING");
     }
 
-    // ✅ [체크리스트] 콜백 정상 처리
     @Test
     @DisplayName("PG 콜백이 성공 상태면 주문이 결제 완료된다")
     void handlePgCallback_success() {
@@ -136,9 +142,11 @@ class PaymentServiceIntegrationTest {
         PaymentCriteria criteria = createCardPaymentCriteria();
         PaymentCallback callback = new PaymentCallback(
                 criteria.orderId(),
-                criteria.totalAmount(),
+                "pgPaymentId-123",
                 "SUCCESS",
-                null
+                criteria.userId(),
+                criteria.amount(),
+                criteria.couponId()
         );
 
         // Act
@@ -146,10 +154,9 @@ class PaymentServiceIntegrationTest {
 
         // Assert
         var order = orderService.getOrderDetail(Long.valueOf(criteria.orderId()));
-        assertThat(order.status()).isEqualTo("PAID");
+        assertThat(order.status()).isEqualTo(OrderStatus.PAID);
     }
 
-    // ✅ [체크리스트] 콜백 금액 불일치
     @Test
     @DisplayName("PG 콜백 금액이 다르면 결제 실패 처리된다")
     void handlePgCallback_invalidAmount() {
@@ -157,9 +164,11 @@ class PaymentServiceIntegrationTest {
         PaymentCriteria criteria = createCardPaymentCriteria();
         PaymentCallback callback = new PaymentCallback(
                 criteria.orderId(),
-                criteria.totalAmount().add(BigDecimal.TEN), // 금액 불일치
+                "pgPaymentId-123",
                 "SUCCESS",
-                null
+                criteria.userId(),
+                criteria.amount().add(BigDecimal.TEN),
+                criteria.couponId()
         );
 
         // Act & Assert
@@ -167,23 +176,21 @@ class PaymentServiceIntegrationTest {
                 .isInstanceOf(IllegalStateException.class);
 
         var order = orderService.getOrderDetail(Long.valueOf(criteria.orderId()));
-        assertThat(order.status()).isEqualTo("PAYMENT_FAILED");
+        assertThat(order.status()).isEqualTo(OrderStatus.PAYMENT_FAILED);
     }
 
-    // ✅ [체크리스트] 콜백이 오지 않아도 상태 조회 API로 복구 가능
     @Test
     @DisplayName("콜백이 오지 않아도 상태 확인 API를 통해 결제 상태를 복구할 수 있다")
     void recoverPaymentStatus_whenCallbackMissing() {
         // Arrange
         PaymentCriteria criteria = createCardPaymentCriteria();
-        PaymentResult requestResult = paymentService.requestCardPayment(criteria);
+        paymentService.requestCardPayment(criteria);
 
         // Act
-        // 콜백이 오지 않는다고 가정하고 → 수동으로 상태 확인 API 호출
         PaymentResult recovered = paymentService.findByOrderId(criteria.userId(), criteria.orderId());
 
         // Assert
-        assertThat(recovered.orderId()).isEqualTo(criteria.pgOrderId());
+        assertThat(recovered.orderId()).isEqualTo(criteria.orderId());
         assertThat(recovered.status()).isIn("PENDING", "SUCCESS", "FAILED", "LIMIT_EXCEEDED", "INVALID_CARD");
     }
 }

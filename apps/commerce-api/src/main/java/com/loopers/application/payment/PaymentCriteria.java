@@ -11,4 +11,8 @@ public record PaymentCriteria(
     BigDecimal amount,
     Long couponId
 
-    ) { }
+    ) {
+    public PaymentCriteria withCardNo(String newCardNo) {
+        return new PaymentCriteria(userId, orderId, pgOrderId, cardType, newCardNo, amount, couponId);
+    }
+}
