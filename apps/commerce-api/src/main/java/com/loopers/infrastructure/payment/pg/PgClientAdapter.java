@@ -1,8 +1,6 @@
 package com.loopers.infrastructure.payment.pg;
 
 import com.loopers.application.payment.port.PaymentGateway;
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
@@ -26,16 +24,44 @@ public class PgClientAdapter implements PaymentGateway {
         var pgResponse = pgClient.requestPayment(request.userId(), pgRequest);
         log.info(">>> PG Raw Response: {}", pgResponse);
 
-        return new Response(request.orderId(), pgResponse.data().transactionKey(), pgResponse.data().status());
+        if ("FAIL".equals(pgResponse.meta().result())) {
+            return new Response(
+                    request.orderId(),
+                    null,
+                    "FAILED",
+                    pgResponse.meta().message()
+            );
+        }
+        return new Response(
+                request.orderId(),
+                pgResponse.data().transactionKey(),
+                pgResponse.data().status(),
+                null);
     }
 
     @Override
     public Response findByOrderId(String userId, String orderId) {
         var pgResponse = pgClient.findByOrderId(userId, orderId);
-        return new Response(orderId, pgResponse.data().transactionKey(), pgResponse.data().status());
+        if ("FAIL".equals(pgResponse.meta().result())) {
+            return new Response(
+                    orderId,
+                    null,
+                    "FAILED",
+                    pgResponse.meta().message()
+            );
+        }
+        return new Response(
+                orderId,
+                pgResponse.data().transactionKey(),
+                pgResponse.data().status(),
+                null);
     }
 
     private PaymentGateway.Response fallbackPayment(PaymentGateway.Request req, Throwable t) {
-        return new PaymentGateway.Response(req.orderId(), null, "FAILED");
+        return new PaymentGateway.Response(
+                req.orderId(),
+                null,
+                "FAILED",
+                "Fallback due to: " + t.getMessage());
     }
 }

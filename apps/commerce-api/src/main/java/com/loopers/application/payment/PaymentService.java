@@ -3,8 +3,6 @@ package com.loopers.application.payment;
 import com.loopers.application.order.OrderService;
 import com.loopers.application.payment.port.PaymentGateway;
 import com.loopers.domain.point.PointRepository;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

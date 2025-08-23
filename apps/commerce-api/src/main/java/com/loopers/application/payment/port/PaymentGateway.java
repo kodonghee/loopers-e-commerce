@@ -6,5 +6,5 @@ public interface PaymentGateway {
     Response request(Request request);
     Response findByOrderId(String userId, String orderId);
     record Request(String userId, String orderId, String cardType, String cardNo, BigDecimal amount, String callbackUrl) {}
-    record Response(String orderId, String paymentId, String status) {}
+    record Response(String orderId, String paymentId, String status, String reason) {}
 }
