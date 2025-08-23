@@ -23,6 +23,7 @@ public final class PgDto {
 
     public static record Response(
             String transactionKey,
-            String status
+            String status,
+            String reason
     ) {}
 }

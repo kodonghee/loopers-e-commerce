@@ -32,20 +32,9 @@ public class PaymentService {
                 finalAmount, callbackUrl
         );
 
-        var result = requestToPg(req);
+        var result = gateway.request(req);
 
         return new PaymentResult(criteria.pgOrderId(), result.paymentId(), result.status());
-    }
-
-    @Retry(name = "pgClient")
-    @CircuitBreaker(name = "pgClient", fallbackMethod = "fallbackPayment")
-    public PaymentGateway.Response requestToPg(PaymentGateway.Request req) {
-        return gateway.request(req);
-    }
-
-
-    private PaymentGateway.Response fallbackPayment(PaymentGateway.Request req, Throwable t) {
-        return new PaymentGateway.Response(req.orderId(), null, "FAILED");
     }
 
     @Transactional

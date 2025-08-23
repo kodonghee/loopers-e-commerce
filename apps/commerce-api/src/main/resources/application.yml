@@ -57,6 +57,9 @@ resilience4j:
       pgClient:
         max-attempts: 3                # 최대 3번 재시도
         wait-duration: 500ms           # 재시도 간격 0.5초
+        retry-exceptions:
+          - java.io.IOException
+          - org.springframework.web.client.ResourceAccessException
 
 pg:
   base-url: http://localhost:8082

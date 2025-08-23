@@ -3,7 +3,6 @@ package com.loopers.application.payment;
 import com.loopers.application.order.OrderCriteria;
 import com.loopers.application.order.OrderResult;
 import com.loopers.application.order.OrderService;
-import com.loopers.application.payment.port.PaymentGateway;
 import com.loopers.application.product.ProductCriteria;
 import com.loopers.application.product.ProductFacade;
 import com.loopers.domain.brand.Brand;
@@ -16,6 +15,8 @@ import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
+import com.loopers.infrastructure.payment.pg.PgClient;
+import com.loopers.infrastructure.payment.pg.PgDto;
 import com.loopers.utils.DatabaseCleanUp;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
@@ -28,7 +29,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
 
 @Slf4j
 @SpringBootTest
@@ -41,8 +43,9 @@ class PaymentServiceIntegrationTest {
     @Autowired private PointRepository pointRepository;
     @Autowired private BrandJpaRepository brandJpaRepository;
     @Autowired private DatabaseCleanUp databaseCleanUp;
+
     @MockitoBean
-    private PaymentGateway gateway;
+    private PgClient pgClient;
 
     private static final String USER_ID = "cookie95";
     private Long brandId;
@@ -90,33 +93,41 @@ class PaymentServiceIntegrationTest {
     void requestCardPayment_success() {
         // Arrange
         PaymentCriteria criteria = createCardPaymentCriteria();
+        given(pgClient.requestPayment(anyString(), any()))
+                .willReturn(new PgDto.ResponseWrapper(
+                        new PgDto.ResponseWrapper.Meta("SUCCESS", null, null),
+                        new PgDto.ResponseWrapper.Data("tx-123", "SUCCESS")
+                ));
 
         // Act
         PaymentResult result = paymentService.requestCardPayment(criteria);
 
         // Assert
         assertThat(result.orderId()).isEqualTo(criteria.pgOrderId());
-        assertThat(result.status()).isIn("PENDING", "SUCCESS", "FAILED", "LIMIT_EXCEEDED", "INVALID_CARD");
-
-        if ("PENDING".equals(result.status())) {
-            assertThat(result.paymentId()).isNull();
-        } else {
-            assertThat(result.paymentId()).isNotBlank();
-        }
+        assertThat(result.status()).isEqualTo("SUCCESS");
+        assertThat(result.paymentId()).isEqualTo("tx-123");
     }
 
     @Test
-    @DisplayName("PG 연동 API 호출 시 잘못된 카드 번호면 PENDING 상태를 먼저 반환한다")
+    @DisplayName("PG 연동 API 호출 시 잘못된 카드 번호면 FAILED 상태를 반환한다")
     void requestCardPayment_invalidCard_pending() {
         // Arrange
         PaymentCriteria criteria = createCardPaymentCriteria()
-                .withCardNo("0000-0000-0000-0000");;
+                .withCardNo("0000-0000-0000-0000");
+
+        given(pgClient.requestPayment(anyString(), any()))
+                .willReturn(new PgDto.ResponseWrapper(
+                        new PgDto.ResponseWrapper.Meta("FAIL", "Bad Request", "카드 번호는 xxxx-xxxx-xxxx-xxxx 형식이어야 합니다."),
+                        null
+                ));
 
         // Act
         PaymentResult result = paymentService.requestCardPayment(criteria);
 
-        // Assert
-        assertThat(result.status()).isEqualTo("PENDING");
+        // Act & Assert
+        assertThat(result.status()).isEqualTo("FAILED");
+        assertThat(result.orderId()).isEqualTo(criteria.pgOrderId());
+        assertThat(result.paymentId()).isNull();
     }
 
     @Test
@@ -124,15 +135,14 @@ class PaymentServiceIntegrationTest {
     void requestCardPayment_fallback() {
         // Arrange
         PaymentCriteria criteria = createCardPaymentCriteria();
-        when(gateway.request(any())).thenThrow(new RuntimeException("PG 장애"));
+        given(pgClient.requestPayment(anyString(), any()))
+                .willThrow(new RuntimeException("PG 장애"));
 
         // Act
         PaymentResult result = paymentService.requestCardPayment(criteria);
 
         // Assert
-        assertThat(result.orderId()).isEqualTo(criteria.pgOrderId());
-        assertThat(result.paymentId()).isNull();
-        assertThat(result.status()).isEqualTo("PENDING");
+        assertThat(result.status()).isEqualTo("FAILED");
     }
 
     @Test
@@ -184,13 +194,26 @@ class PaymentServiceIntegrationTest {
     void recoverPaymentStatus_whenCallbackMissing() {
         // Arrange
         PaymentCriteria criteria = createCardPaymentCriteria();
+
+        given(pgClient.requestPayment(anyString(), any()))
+                .willReturn(new PgDto.ResponseWrapper(
+                        new PgDto.ResponseWrapper.Meta("SUCCESS", null, null),
+                        new PgDto.ResponseWrapper.Data("tx-123", "PENDING")
+                ));
+
         paymentService.requestCardPayment(criteria);
+
+        given(pgClient.findByOrderId(anyString(), anyString()))
+                .willReturn(new PgDto.ResponseWrapper(
+                        new PgDto.ResponseWrapper.Meta("SUCCESS", null, null),
+                        new PgDto.ResponseWrapper.Data("tx-123", "SUCCESS")
+                ));
 
         // Act
         PaymentResult recovered = paymentService.findByOrderId(criteria.userId(), criteria.orderId());
 
         // Assert
         assertThat(recovered.orderId()).isEqualTo(criteria.orderId());
-        assertThat(recovered.status()).isIn("PENDING", "SUCCESS", "FAILED", "LIMIT_EXCEEDED", "INVALID_CARD");
+        assertThat(recovered.status()).isEqualTo("SUCCESS");
     }
 }
