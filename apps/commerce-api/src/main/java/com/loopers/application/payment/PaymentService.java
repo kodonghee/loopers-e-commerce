@@ -44,8 +44,8 @@ public class PaymentService {
     }
 
 
-    private PaymentResult fallbackPayment(PaymentCriteria criteria, Throwable t) {
-        return new PaymentResult(criteria.pgOrderId(), null, "FAILED");
+    private PaymentGateway.Response fallbackPayment(PaymentGateway.Request req, Throwable t) {
+        return new PaymentGateway.Response(req.orderId(), null, "FAILED");
     }
 
     @Transactional
