@@ -23,18 +23,26 @@ public class PaymentService {
     @Value("${pg.callback-url:http://localhost:8080/api/v1/payments/callback}")
     private String callbackUrl;
 
-    @Retry(name = "pgClient")
-    @CircuitBreaker(name = "pgClient", fallbackMethod = "fallbackPayment")
     public PaymentResult requestCardPayment(PaymentCriteria criteria) {
         BigDecimal finalAmount = orderService.prepareForPayment(Long.valueOf(criteria.orderId()), criteria.couponId());
+
         var req = new PaymentGateway.Request(
                 criteria.userId(), criteria.pgOrderId(),
                 criteria.cardType(), criteria.cardNo(),
                 finalAmount, callbackUrl
         );
-        var result = gateway.request(req);
+
+        var result = requestToPg(req);
+
         return new PaymentResult(criteria.pgOrderId(), result.paymentId(), result.status());
     }
+
+    @Retry(name = "pgClient")
+    @CircuitBreaker(name = "pgClient", fallbackMethod = "fallbackPayment")
+    public PaymentGateway.Response requestToPg(PaymentGateway.Request req) {
+        return gateway.request(req);
+    }
+
 
     private PaymentResult fallbackPayment(PaymentCriteria criteria, Throwable t) {
         return new PaymentResult(criteria.pgOrderId(), null, "FAILED");
