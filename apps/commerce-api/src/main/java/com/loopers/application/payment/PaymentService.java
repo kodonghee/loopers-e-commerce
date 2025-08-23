@@ -5,7 +5,6 @@ import com.loopers.application.payment.port.PaymentGateway;
 import com.loopers.domain.point.PointRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
-import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -38,7 +37,7 @@ public class PaymentService {
     }
 
     private PaymentResult fallbackPayment(PaymentCriteria criteria, Throwable t) {
-        return new PaymentResult(criteria.pgOrderId(), null, "PENDING");
+        return new PaymentResult(criteria.pgOrderId(), null, "FAILED");
     }
 
     @Transactional
