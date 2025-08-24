@@ -7,12 +7,11 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name="payment", uniqueConstraints = {
-        @UniqueConstraint(name="uk_payment_order", columnNames="order_id"),
         @UniqueConstraint(name="uk_payment_external", columnNames="external_payment_id")
 })
 public class Payment extends BaseEntity {
     @Column(name="order_id", nullable=false, updatable = false)
-    private Long orderId;
+    private String orderId;
     @Column(name="user_id",  nullable=false, updatable = false)
     private String userId;
     @Column(name = "amount", nullable = false, precision = 15, scale = 2)
@@ -29,18 +28,20 @@ public class Payment extends BaseEntity {
 
     protected Payment(){};
 
-    private Payment(Long orderId, String userId, BigDecimal amount) {
+    private Payment(String orderId, String userId, BigDecimal amount) {
         this.orderId = orderId;
         this.userId = userId;
         this.amount = amount;
         this.status = Status.PENDING;
         this.attemptCount = 0;
+        this.externalPaymentId = null;
+        this.reason = null;
     }
-    public static Payment newForOrder(Long orderId, String userId, BigDecimal amount) {
+    public static Payment newForOrder(String orderId, String userId, BigDecimal amount) {
         return new Payment(orderId, userId, amount);
     }
 
-    public Long getOrderId() { return orderId; }
+    public String getOrderId() { return orderId; }
     public String getUserId() { return userId; }
     public BigDecimal getAmount() { return amount; }
     public String getExternalPaymentId() { return externalPaymentId; }
@@ -77,6 +78,16 @@ public class Payment extends BaseEntity {
     @Deprecated
     public void applyResult(String status, String reason) {
         applyCallback(this.externalPaymentId, Status.valueOf(status), reason);
+    }
+
+    public boolean isSuccess() {
+        return this.status == Status.SUCCESS;
+    }
+
+    public boolean isFailed() {
+        return this.status == Status.FAILED
+                || this.status == Status.INVALID_CARD
+                || this.status == Status.LIMIT_EXCEEDED;
     }
 
     public enum Status { PENDING, SUCCESS, LIMIT_EXCEEDED, INVALID_CARD, FAILED }

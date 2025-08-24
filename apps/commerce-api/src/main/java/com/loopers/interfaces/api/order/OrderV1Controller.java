@@ -20,7 +20,7 @@ public class OrderV1Controller implements OrderV1ApiSpec {
 
     @PostMapping
     @Override
-    public ApiResponse<Long> placeOrder(
+    public ApiResponse<String> placeOrder(
             @RequestHeader("X-USER-ID") UserId userId,
             @RequestBody OrderV1Dto.PlaceOrderRequest request
     ) {
@@ -49,7 +49,7 @@ public class OrderV1Controller implements OrderV1ApiSpec {
     @GetMapping("/{orderId}")
     @Override
     public ApiResponse<OrderV1Dto.OrderResponse> getOrderDetail(
-            @PathVariable("orderId") Long orderId
+            @PathVariable("orderId") String orderId
     ) {
         OrderResult info = orderService.getOrderDetail(orderId);
         return ApiResponse.success(OrderV1Dto.OrderResponse.from(info));

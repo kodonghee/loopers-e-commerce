@@ -102,8 +102,7 @@ class OrderServiceIntegrationTest {
             OrderResult orderResult = orderService.createPendingOrder(criteria);
             PaymentCriteria paymentCriteria = new PaymentCriteria(
                     USER_ID,
-                    orderResult.orderId().toString(),
-                    orderResult.pgOrderId(),
+                    orderResult.orderId(),
                     null,
                     null,
                     orderResult.totalAmount(),
@@ -114,7 +113,7 @@ class OrderServiceIntegrationTest {
 
             // assert
             assertThat(orderResult.totalAmount()).isEqualTo(new BigDecimal("200000"));
-            assertThat(orderRepository.findById(orderResult.orderId())).isPresent();
+            assertThat(orderRepository.findByOrderId(orderResult.orderId())).isPresent();
             assertThat(couponRepository.findById(userCouponId).get().isUsed()).isTrue();
             assertThat(productRepository.findById(product.getId()).get().getStock().getValue()).isEqualTo(8);
             assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())
@@ -161,8 +160,7 @@ class OrderServiceIntegrationTest {
 
             PaymentCriteria paymentCriteria = new PaymentCriteria(
                     USER_ID,
-                    order.orderId().toString(),
-                    order.pgOrderId(),
+                    order.orderId(),
                     null,   // 카드 정보 없음
                     null,
                     order.totalAmount(),
@@ -174,7 +172,7 @@ class OrderServiceIntegrationTest {
 
             // assert
             assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
-            assertThat(orderRepository.findById(order.orderId()).get().getStatus()).isEqualTo(OrderStatus.PAYMENT_FAILED);
+            assertThat(orderRepository.findByOrderId(order.orderId()).get().getStatus()).isEqualTo(OrderStatus.PAYMENT_FAILED);
             assertThat(couponRepository.findById(userCouponId).get().isUsed()).isFalse();
             assertThat(productRepository.findById(product.getId()).get().getStock().getValue()).isEqualTo(1);
             assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())
@@ -200,8 +198,7 @@ class OrderServiceIntegrationTest {
             OrderResult order = orderService.createPendingOrder(criteria);
             PaymentCriteria paymentCriteria = new PaymentCriteria(
                     USER_ID,
-                    order.orderId().toString(),
-                    order.pgOrderId(),
+                    order.orderId(),
                     null,   // 카드 정보 없음
                     null,
                     order.totalAmount(),
@@ -247,8 +244,7 @@ class OrderServiceIntegrationTest {
             OrderResult order = orderService.createPendingOrder(criteria);
             PaymentCriteria paymentCriteria = new PaymentCriteria(
                     USER_ID,
-                    order.orderId().toString(),
-                    order.pgOrderId(),
+                    order.orderId(),
                     null,
                     null,
                     order.totalAmount(),
@@ -264,7 +260,7 @@ class OrderServiceIntegrationTest {
             assertThat(productRepository.findById(product.getId()).get().getStock().getValue()).isEqualTo(5);
             assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())
                     .isEqualByComparingTo(new BigDecimal("300000"));
-            assertThat(orderRepository.findById(order.orderId()).get().getStatus())
+            assertThat(orderRepository.findByOrderId(order.orderId()).get().getStatus())
                     .isEqualTo(OrderStatus.PAYMENT_FAILED);
         }
 
@@ -288,8 +284,7 @@ class OrderServiceIntegrationTest {
             OrderResult order = orderService.createPendingOrder(criteria);
             PaymentCriteria paymentCriteria = new PaymentCriteria(
                     USER_ID,
-                    order.orderId().toString(),
-                    order.pgOrderId(),
+                    order.orderId(),
                     null,
                     null,
                     order.totalAmount(),
@@ -304,7 +299,7 @@ class OrderServiceIntegrationTest {
             assertThat(productRepository.findById(product.getId()).get().getStock().getValue()).isEqualTo(5);
             assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())
                     .isEqualByComparingTo(new BigDecimal("300000"));
-            assertThat(orderRepository.findById(order.orderId()).get().getStatus())
+            assertThat(orderRepository.findByOrderId(order.orderId()).get().getStatus())
                     .isEqualTo(OrderStatus.PAYMENT_FAILED);
         }
 
@@ -328,8 +323,7 @@ class OrderServiceIntegrationTest {
             OrderResult firstOrder = orderService.createPendingOrder(firstOrderCriteria);
             PaymentCriteria firstPaymentCriteria = new PaymentCriteria(
                     USER_ID,
-                    firstOrder.orderId().toString(),
-                    firstOrder.pgOrderId(),
+                    firstOrder.orderId(),
                     null,
                     null,
                     firstOrder.totalAmount(),
@@ -347,8 +341,7 @@ class OrderServiceIntegrationTest {
             OrderResult secondOrder = orderService.createPendingOrder(secondOrderCriteria);
             PaymentCriteria secondPaymentCriteria = new PaymentCriteria(
                     USER_ID,
-                    secondOrder.orderId().toString(),
-                    secondOrder.pgOrderId(),
+                    secondOrder.orderId(),
                     null,
                     null,
                     secondOrder.totalAmount(),
@@ -365,7 +358,7 @@ class OrderServiceIntegrationTest {
             assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())
                     .isEqualByComparingTo(new BigDecimal("250000"));
             assertThat(orderRepository.findAllByUserId(new UserId(USER_ID)).size()).isEqualTo(2);
-            assertThat(orderRepository.findById(secondOrder.orderId()).get().getStatus())
+            assertThat(orderRepository.findByOrderId(secondOrder.orderId()).get().getStatus())
                     .isEqualTo(OrderStatus.PAYMENT_FAILED);
         }
     }

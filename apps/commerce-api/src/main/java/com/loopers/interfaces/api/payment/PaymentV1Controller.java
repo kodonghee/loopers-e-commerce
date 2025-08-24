@@ -24,7 +24,6 @@ public class PaymentV1Controller implements PaymentV1ApiSpec {
         PaymentCriteria criteria = new PaymentCriteria(
                 userId,
                 request.orderId(),
-                request.pgOrderId(),
                 request.cardType(),
                 request.cardNo(),
                 request.amount(),

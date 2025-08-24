@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Table(name = "orders")
@@ -15,7 +14,7 @@ public class Order extends BaseEntity {
     @Column(nullable = false)
     private String userId;
 
-    private String pgOrderId;
+    private String orderId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 32)
@@ -40,16 +39,14 @@ public class Order extends BaseEntity {
         this.orderItems.addAll(items);
         this.status = OrderStatus.AWAITING_PAYMENT;
         this.finalAmount = getTotalAmount();
-        this.pgOrderId = String.valueOf(System.currentTimeMillis());
+        this.orderId = String.valueOf(System.currentTimeMillis());
     }
 
     public static Order createPending(String userId, List<OrderItem> items, PaymentMethod paymentMethod) {
         return new Order(userId, items, paymentMethod);
     }
 
-    public Long getOrderId() { return id; }
-
-    public String getPgOrderId() {return pgOrderId; }
+    public String getOrderId() { return orderId; }
 
     public String getUserId() { return userId; }
 

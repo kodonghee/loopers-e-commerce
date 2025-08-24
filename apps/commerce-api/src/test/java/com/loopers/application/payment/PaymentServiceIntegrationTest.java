@@ -79,8 +79,7 @@ class PaymentServiceIntegrationTest {
 
         return new PaymentCriteria(
                 USER_ID,
-                order.orderId().toString(),
-                order.pgOrderId(),
+                order.orderId(),
                 "SAMSUNG",
                 "1234-5678-9814-1451",
                 order.totalAmount(),
@@ -103,7 +102,7 @@ class PaymentServiceIntegrationTest {
         PaymentResult result = paymentService.requestCardPayment(criteria);
 
         // Assert
-        assertThat(result.orderId()).isEqualTo(criteria.pgOrderId());
+        assertThat(result.orderId()).isEqualTo(criteria.orderId());
         assertThat(result.status()).isEqualTo("SUCCESS");
         assertThat(result.paymentId()).isEqualTo("tx-123");
     }
@@ -126,7 +125,7 @@ class PaymentServiceIntegrationTest {
 
         // Act & Assert
         assertThat(result.status()).isEqualTo("FAILED");
-        assertThat(result.orderId()).isEqualTo(criteria.pgOrderId());
+        assertThat(result.orderId()).isEqualTo(criteria.orderId());
         assertThat(result.paymentId()).isNull();
     }
 
@@ -163,7 +162,7 @@ class PaymentServiceIntegrationTest {
         paymentService.handlePgCallback(callback);
 
         // Assert
-        var order = orderService.getOrderDetail(Long.valueOf(criteria.orderId()));
+        var order = orderService.getOrderDetail(criteria.orderId());
         assertThat(order.status()).isEqualTo(OrderStatus.PAID);
     }
 
@@ -185,7 +184,7 @@ class PaymentServiceIntegrationTest {
         assertThatThrownBy(() -> paymentService.handlePgCallback(callback))
                 .isInstanceOf(IllegalStateException.class);
 
-        var order = orderService.getOrderDetail(Long.valueOf(criteria.orderId()));
+        var order = orderService.getOrderDetail(criteria.orderId());
         assertThat(order.status()).isEqualTo(OrderStatus.PAYMENT_FAILED);
     }
 

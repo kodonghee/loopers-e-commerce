@@ -5,7 +5,6 @@ import java.math.BigDecimal;
 public record PaymentCriteria(
     String userId,
     String orderId,
-    String pgOrderId,
     String cardType,
     String cardNo,
     BigDecimal amount,
@@ -13,6 +12,6 @@ public record PaymentCriteria(
 
     ) {
     public PaymentCriteria withCardNo(String newCardNo) {
-        return new PaymentCriteria(userId, orderId, pgOrderId, cardType, newCardNo, amount, couponId);
+        return new PaymentCriteria(userId, orderId, cardType, newCardNo, amount, couponId);
     }
 }

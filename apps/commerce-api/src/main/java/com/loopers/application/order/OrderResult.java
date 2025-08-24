@@ -6,8 +6,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public record OrderResult(
-        Long orderId,
-        String pgOrderId,
+        String orderId,
         String userId,
         BigDecimal totalAmount,
         List<OrderItemResult> items,
