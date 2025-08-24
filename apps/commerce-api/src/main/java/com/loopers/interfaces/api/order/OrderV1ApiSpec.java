@@ -13,7 +13,7 @@ public interface OrderV1ApiSpec {
 
     @Operation(summary = "주문 요청")
     @PostMapping("/orders")
-    ApiResponse<Long> placeOrder(
+    ApiResponse<String> placeOrder(
             @RequestHeader("X-USER-ID") UserId userId,
             @RequestBody OrderV1Dto.PlaceOrderRequest request
     );
@@ -27,6 +27,6 @@ public interface OrderV1ApiSpec {
     @Operation(summary = "단일 주문 상세 조회")
     @GetMapping("orders/{orderId}")
     ApiResponse<OrderV1Dto.OrderResponse> getOrderDetail(
-            @PathVariable("orderId") Long orderId
+            @PathVariable("orderId") String orderId
     );
 }

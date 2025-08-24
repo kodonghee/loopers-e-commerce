@@ -54,7 +54,7 @@ services:
         "--latency-monitor-threshold", "100",
       ]
     healthcheck:
-      test: ["CMD", "redis-cli", "-p", "6380", "PING"]
+      test: ["CMD", "redis-cli", "-p", "6379", "PING"]
       interval: 5s
       timeout: 2s
       retries: 10

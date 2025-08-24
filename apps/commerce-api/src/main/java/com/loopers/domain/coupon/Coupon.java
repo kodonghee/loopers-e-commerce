@@ -41,17 +41,16 @@ public class Coupon extends BaseEntity {
             throw new IllegalArgumentException("쿠폰 소유자가 아닙니다.");
         }
     }
-    public BigDecimal applyCoupon(BigDecimal totalAmount) {
+    public BigDecimal calculateDiscount(BigDecimal totalAmount) {
         if (used) {
             throw new IllegalStateException("이미 사용된 쿠폰입니다.");
         }
 
-        BigDecimal discount = switch (type) {
+        return switch (type) {
             case FIXED -> amount.min(totalAmount);
-            case RATE -> totalAmount.multiply(amount).divide(new BigDecimal("100"), 0, RoundingMode.FLOOR);
+            case RATE -> totalAmount.multiply(amount)
+                    .divide(new BigDecimal("100"), 0, RoundingMode.FLOOR);
         };
-
-        return totalAmount.subtract(discount);
     }
 
     public void markAsUsed() {

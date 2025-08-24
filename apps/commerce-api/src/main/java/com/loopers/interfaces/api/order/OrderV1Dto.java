@@ -8,7 +8,7 @@ import java.util.List;
 public class OrderV1Dto {
 
     public record OrderResponse(
-            Long orderId,
+            String orderId,
             String userId,
             BigDecimal totalAmount,
             List<OrderItemResponse> items
@@ -32,13 +32,13 @@ public class OrderV1Dto {
     public class PlaceOrderRequest {
         private List<OrderItemRequest> items;
         private Long couponId;
+        private String paymentMethod;
 
         public List<OrderItemRequest> getItems() {
             return items;
         }
-
         public Long getCouponId() { return couponId; }
-
+        public String getPaymentMethod() {return paymentMethod; }
         public record OrderItemRequest(Long productId, int quantity, BigDecimal price) {}
 
     }

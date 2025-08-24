@@ -11,20 +11,42 @@ import java.util.List;
 @Table(name = "orders")
 public class Order extends BaseEntity {
 
+    @Column(nullable = false)
     private String userId;
+
+    private String orderId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private OrderStatus status = OrderStatus.AWAITING_PAYMENT;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 16)
+    private PaymentMethod paymentMethod = PaymentMethod.POINTS;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "order_id")
     private List<OrderItem> orderItems = new ArrayList<>();
 
+    @Column(name = "final_amount", nullable = false)
+    private BigDecimal finalAmount;
+
     protected Order() {}
 
-    public Order(String userId, List<OrderItem> items) {
+    private Order(String userId, List<OrderItem> items, PaymentMethod paymentMethod) {
         this.userId = userId;
+        this.paymentMethod = paymentMethod;
         this.orderItems.addAll(items);
+        this.status = OrderStatus.AWAITING_PAYMENT;
+        this.finalAmount = getTotalAmount();
+        this.orderId = String.valueOf(System.currentTimeMillis());
     }
 
-    public Long getOrderId() { return id; }
+    public static Order createPending(String userId, List<OrderItem> items, PaymentMethod paymentMethod) {
+        return new Order(userId, items, paymentMethod);
+    }
+
+    public String getOrderId() { return orderId; }
 
     public String getUserId() { return userId; }
 
@@ -37,4 +59,25 @@ public class Order extends BaseEntity {
                 .map(OrderItem::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
+
+    public void applyDiscount(BigDecimal discountAmount) {
+        if (discountAmount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("할인 금액은 음수가 될 수 없습니다.");
+        }
+
+        if (discountAmount.compareTo(getTotalAmount()) > 0) {
+            throw new IllegalArgumentException("할인 금액은 주문 금액을 초과할 수 없습니다.");
+        }
+        this.finalAmount = this.getFinalAmount().subtract(discountAmount);
+    }
+
+    public BigDecimal getFinalAmount() { return finalAmount; }
+
+    public void markAwaitingPayment() { this.status = OrderStatus.AWAITING_PAYMENT; }
+    public void markPaid() { this.status = OrderStatus.PAID; }
+    public void markPaymentFailed()   { this.status = OrderStatus.PAYMENT_FAILED; }
+    public void markCancelled() {this.status = OrderStatus.CANCELLED; }
+
+    public OrderStatus getStatus() { return status; }
+    public PaymentMethod getPaymentMethod() { return paymentMethod; }
 }

@@ -2,16 +2,21 @@ package com.loopers.application.order;
 
 import com.loopers.application.coupon.CouponCriteria;
 import com.loopers.application.coupon.CouponUseCase;
+import com.loopers.application.payment.PaymentCriteria;
+import com.loopers.application.payment.PaymentService;
 import com.loopers.application.product.ProductCriteria;
 import com.loopers.application.product.ProductFacade;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.coupon.CouponType;
+import com.loopers.domain.order.OrderStatus;
+import com.loopers.domain.order.PaymentMethod;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
+import com.loopers.infrastructure.coupon.CouponJpaRepository;
 import com.loopers.infrastructure.order.OrderJpaRepository;
 import com.loopers.infrastructure.point.PointJpaRepository;
 import com.loopers.infrastructure.product.ProductJpaRepository;
@@ -31,12 +36,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @DisplayName("주문 동시성 테스트")
-class OrderFacadeConcurrencyIntegrationTest {
+class OrderServiceConcurrencyIntegrationTest {
 
     @Autowired
     private CouponUseCase couponUseCase;
     @Autowired
-    private OrderFacade orderFacade;
+    private OrderService orderService;
+    @Autowired
+    private PaymentService paymentService;
     @Autowired
     private ProductFacade productFacade;
     @Autowired
@@ -49,6 +56,8 @@ class OrderFacadeConcurrencyIntegrationTest {
     private BrandJpaRepository brandJpaRepository;
     @Autowired
     private ProductJpaRepository productJpaRepository;
+    @Autowired
+    private CouponJpaRepository couponJpaRepository;
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
 
@@ -82,7 +91,8 @@ class OrderFacadeConcurrencyIntegrationTest {
         OrderCriteria orderCriteria = new OrderCriteria(
                 USER_ID,
                 List.of(new OrderCriteria.OrderLine(product.getId(), 1, product.getPrice().getAmount())),
-                userCouponId
+                userCouponId,
+                PaymentMethod.POINTS
         );
 
         int threadCount = 100;
@@ -92,7 +102,8 @@ class OrderFacadeConcurrencyIntegrationTest {
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    orderFacade.placeOrder(orderCriteria);
+                    OrderResult order = orderService.createPendingOrder(orderCriteria);
+                    orderService.confirmPayment(order.orderId(), userCouponId);
                 } catch (Exception ignored) {
                 } finally {
                     latch.countDown();
@@ -102,8 +113,12 @@ class OrderFacadeConcurrencyIntegrationTest {
 
         latch.await();
 
-        Long successCount = orderJpaRepository.count();
-        assertThat(successCount).isEqualTo(1);
+        Long successOrders = orderJpaRepository.count();
+        System.out.println("생성된 주문 수 = " + successOrders);
+
+        var coupon = couponJpaRepository.findById(userCouponId)
+                .orElseThrow();
+        assertThat(coupon.isUsed()).isTrue();
     }
 
     @DisplayName("동일한 유저가 서로 다른 주문을 동시에 수행해도, 포인트가 정상적으로 차감되어야 한다.")
@@ -113,8 +128,8 @@ class OrderFacadeConcurrencyIntegrationTest {
         Product p2 = productFacade.create(new ProductCriteria("B", 10, new BigDecimal("100000"), brandId));
 
         List<OrderCriteria> payloads = List.of(
-                new OrderCriteria(USER_ID, List.of(new OrderCriteria.OrderLine(p1.getId(), 1, p1.getPrice().getAmount())), null),
-                new OrderCriteria(USER_ID, List.of(new OrderCriteria.OrderLine(p2.getId(), 1, p2.getPrice().getAmount())), null)
+                new OrderCriteria(USER_ID, List.of(new OrderCriteria.OrderLine(p1.getId(), 1, p1.getPrice().getAmount())), null, PaymentMethod.POINTS),
+                new OrderCriteria(USER_ID, List.of(new OrderCriteria.OrderLine(p2.getId(), 1, p2.getPrice().getAmount())), null, PaymentMethod.POINTS)
         );
 
         int threadCount = 100;
@@ -124,16 +139,30 @@ class OrderFacadeConcurrencyIntegrationTest {
         for (int i = 0; i < threadCount; i++) {
             OrderCriteria c = payloads.get(i % payloads.size());
             es.submit(() -> {
-                try { orderFacade.placeOrder(c); } catch (Exception ignored) {}
+                try {
+                    OrderResult order= orderService.createPendingOrder(c);
+
+                    PaymentCriteria paymentCriteria = new PaymentCriteria(
+                            USER_ID,
+                            order.orderId(),
+                            null,
+                            null,
+                            order.totalAmount(),
+                            null
+                    );
+                    paymentService.processPointPayment(paymentCriteria);
+                } catch (Exception ignored) {}
                 finally { latch.countDown(); }
             });
         }
 
-        latch.await(10, TimeUnit.SECONDS);
+        boolean completed = latch.await(10, TimeUnit.SECONDS);
+        assertThat(completed).as("모든 스레드가 제한 시간 내 실행을 완료해야 함").isTrue();
 
-        Long successOrders = orderJpaRepository.count();
+        Long successOrders = orderJpaRepository.countByStatus(OrderStatus.PAID);
 
-        BigDecimal expectedRemain = new BigDecimal("300000").subtract(new BigDecimal("100000").multiply(new BigDecimal(successOrders)));
+        BigDecimal expectedRemain = new BigDecimal("300000")
+                .subtract(new BigDecimal("100000").multiply(new BigDecimal(successOrders)));
 
         BigDecimal actualRemain = pointJpaRepository.findByUserId(USER_ID).orElseThrow().getPointValue();
         assertThat(actualRemain).isEqualByComparingTo(expectedRemain);
@@ -153,7 +182,8 @@ class OrderFacadeConcurrencyIntegrationTest {
         OrderCriteria payload = new OrderCriteria(
                 USER_ID,
                 List.of(new OrderCriteria.OrderLine(product.getId(), 1, product.getPrice().getAmount())),
-                null
+                null,
+                PaymentMethod.POINTS
         );
 
         ExecutorService es = Executors.newFixedThreadPool(threadCount);
@@ -162,7 +192,8 @@ class OrderFacadeConcurrencyIntegrationTest {
         for (int i = 0; i < threadCount; i++) {
             es.submit(() -> {
                 try {
-                    orderFacade.placeOrder(payload);
+                    var order = orderService.createPendingOrder(payload);
+                    orderService.confirmPayment(order.orderId(), null);
                 } catch (Exception ignored) {
                 } finally {
                     latch.countDown();
@@ -173,7 +204,7 @@ class OrderFacadeConcurrencyIntegrationTest {
         boolean completed = latch.await(15, TimeUnit.SECONDS);
         assertThat(completed).as("쓰레드 작업이 제한 시간 내 완료 되어야 함").isTrue();
 
-        long successOrders = orderJpaRepository.count();
+        long successOrders = orderJpaRepository.countByStatus(OrderStatus.PAID);
 
         int expectedRemain = initialStock - (int) successOrders;
         int actualRemain = productJpaRepository.findById(product.getId())
