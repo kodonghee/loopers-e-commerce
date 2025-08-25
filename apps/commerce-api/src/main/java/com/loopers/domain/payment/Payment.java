@@ -20,7 +20,7 @@ public class Payment extends BaseEntity {
     private String externalPaymentId;
     @Enumerated(EnumType.STRING)
     @Column(nullable=false, length = 32)
-    private Status status = Status.PENDING;
+    private PaymentStatus status = PaymentStatus.PENDING;
     @Column(name = "attempt_count", nullable = false)
     private int attemptCount = 0;
     @Column(length = 255)
@@ -32,7 +32,7 @@ public class Payment extends BaseEntity {
         this.orderId = orderId;
         this.userId = userId;
         this.amount = amount;
-        this.status = Status.PENDING;
+        this.status = PaymentStatus.PENDING;
         this.attemptCount = 0;
         this.externalPaymentId = null;
         this.reason = null;
@@ -45,31 +45,31 @@ public class Payment extends BaseEntity {
     public String getUserId() { return userId; }
     public BigDecimal getAmount() { return amount; }
     public String getExternalPaymentId() { return externalPaymentId; }
-    public Status getStatus() { return status; }
+    public PaymentStatus getStatus() { return status; }
     public int getAttemptCount() { return attemptCount; }
     public String getReason() { return reason; }
 
     public void startNewAttempt() {
-        if (this.status == Status.SUCCESS) {
+        if (this.status == PaymentStatus.SUCCESS) {
             throw new IllegalStateException("이미 지불 되었습니다.");
         }
-        this.status = Status.PENDING;
+        this.status = PaymentStatus.PENDING;
         this.externalPaymentId = null;
         this.reason = null;
         this.attemptCount += 1;
     }
 
-    public boolean isFinalized() { return status != Status.PENDING; }
+    public boolean isFinalized() { return this.status.isFinalized(); }
 
     public void markRequested(String externalId) {
-        if (this.status != Status.PENDING) return;
+        if (this.status != PaymentStatus.PENDING) return;
         if (this.externalPaymentId == null) {
             this.externalPaymentId = externalId;
         }
     }
 
-    public void applyCallback(String extId, Status newStatus, String reason) {
-        if (this.status != Status.PENDING) return;
+    public void applyCallback(String extId, PaymentStatus newStatus, String reason) {
+        if (this.status != PaymentStatus.PENDING) return;
         if (this.externalPaymentId != null && !this.externalPaymentId.equals(extId)) return;
         this.status = newStatus;
         this.reason = reason;
@@ -77,19 +77,15 @@ public class Payment extends BaseEntity {
 
     @Deprecated
     public void applyResult(String status, String reason) {
-        applyCallback(this.externalPaymentId, Status.valueOf(status), reason);
+        applyCallback(this.externalPaymentId, PaymentStatus.valueOf(status), reason);
     }
 
     public boolean isSuccess() {
-        return this.status == Status.SUCCESS;
+        return this.status.isSuccess();
     }
 
     public boolean isFailed() {
-        return this.status == Status.FAILED
-                || this.status == Status.INVALID_CARD
-                || this.status == Status.LIMIT_EXCEEDED;
+        return this.status.isFailure();
     }
-
-    public enum Status { PENDING, SUCCESS, LIMIT_EXCEEDED, INVALID_CARD, FAILED }
 }
 

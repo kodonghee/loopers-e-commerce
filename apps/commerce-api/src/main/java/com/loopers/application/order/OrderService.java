@@ -5,7 +5,6 @@ import com.loopers.domain.coupon.CouponRepository;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderRepository;
-import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.UserId;
@@ -14,7 +13,6 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -59,8 +57,7 @@ public class OrderService {
 
     @Transactional
     public BigDecimal prepareForPayment(String orderId, Long couponId) {
-        Order order = orderRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다."));
+        Order order = getOrderEntity(orderId);
 
         BigDecimal finalAmount = order.getTotalAmount();
 
@@ -78,8 +75,7 @@ public class OrderService {
 
     @Transactional
     public void confirmPayment(String orderId, Long couponId) {
-        Order order = orderRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다."));
+        Order order = getOrderEntity(orderId);
 
         // 재고 차감
         List<Long> productIds = order.getOrderItems().stream()
@@ -109,17 +105,14 @@ public class OrderService {
         order.markPaid();
     }
 
-
     @Transactional
-    public void markOrderPaid(String orderId) {
-        orderRepository.findByOrderId(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다."))
-                .markPaid();
-    }
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void markOrderFailed(String orderId) {
-        orderJpaRepository.markOrderFailed(orderId, OrderStatus.PAYMENT_FAILED);
+    public void markOrderFailed(String orderId, boolean businessFailure) {
+        Order order = getOrderEntity(orderId);
+        if (businessFailure) {
+            order.markPaymentDeclined();
+        } else {
+            order.markPaymentError();
+        }
     }
 
     @Transactional(readOnly = true)
@@ -131,8 +124,12 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public OrderResult getOrderDetail(String orderId) {
-        Order order = orderRepository.findByOrderId(orderId)
+        return OrderMapper.fromOrder(getOrderEntity(orderId));
+    }
+
+    @Transactional(readOnly = true)
+    public Order getOrderEntity(String orderId) {
+        return orderRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다."));
-        return OrderMapper.fromOrder(order);
     }
 }

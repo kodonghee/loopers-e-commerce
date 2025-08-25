@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "orders")
@@ -39,7 +40,7 @@ public class Order extends BaseEntity {
         this.orderItems.addAll(items);
         this.status = OrderStatus.AWAITING_PAYMENT;
         this.finalAmount = getTotalAmount();
-        this.orderId = String.valueOf(System.currentTimeMillis());
+        this.orderId = UUID.randomUUID().toString();
     }
 
     public static Order createPending(String userId, List<OrderItem> items, PaymentMethod paymentMethod) {
@@ -75,9 +76,16 @@ public class Order extends BaseEntity {
 
     public void markAwaitingPayment() { this.status = OrderStatus.AWAITING_PAYMENT; }
     public void markPaid() { this.status = OrderStatus.PAID; }
-    public void markPaymentFailed()   { this.status = OrderStatus.PAYMENT_FAILED; }
+    public void markPaymentDeclined() { this.status = OrderStatus.PAYMENT_DECLINED; }
+    public void markPaymentError() { this.status = OrderStatus.PAYMENT_ERROR; }
     public void markCancelled() {this.status = OrderStatus.CANCELLED; }
 
     public OrderStatus getStatus() { return status; }
     public PaymentMethod getPaymentMethod() { return paymentMethod; }
+
+    public boolean isPaid() { return this.status == OrderStatus.PAID; }
+    public boolean isAwaitingPayment() { return this.status == OrderStatus.AWAITING_PAYMENT; }
+    public boolean isDeclined() { return this.status == OrderStatus.PAYMENT_DECLINED; }
+    public boolean isError() { return this.status == OrderStatus.PAYMENT_ERROR; }
+    public boolean isCancelled() { return this.status == OrderStatus.CANCELLED; }
 }

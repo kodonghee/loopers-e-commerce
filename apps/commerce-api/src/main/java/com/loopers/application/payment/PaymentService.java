@@ -2,6 +2,7 @@ package com.loopers.application.payment;
 
 import com.loopers.application.order.OrderService;
 import com.loopers.application.payment.port.PaymentGateway;
+import com.loopers.domain.payment.Payment;
 import com.loopers.domain.point.PointRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -9,8 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 
@@ -49,6 +48,9 @@ public class PaymentService {
 
     @Transactional
     public PaymentResult processPointPayment(PaymentCriteria criteria) {
+        Payment payment = Payment.newForOrder(criteria.orderId(), criteria.userId(), criteria.amount());
+
+
         try {
             BigDecimal finalAmount = orderService.prepareForPayment(criteria.orderId(), criteria.couponId());
 
@@ -58,15 +60,11 @@ public class PaymentService {
 
             orderService.confirmPayment(criteria.orderId(), criteria.couponId());
             return PaymentResult.success(criteria.orderId());
-        } catch (Exception e) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCompletion(int status) {
-                    if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
-                        orderService.markOrderFailed(criteria.orderId());
-                    }
-                }
-            });
+        } catch (IllegalArgumentException e) {
+            orderService.markOrderFailed(criteria.orderId(), true);
+            throw e;
+        } catch (RuntimeException e) {
+            orderService.markOrderFailed(criteria.orderId(), false);
             throw e;
         }
     }
@@ -76,7 +74,7 @@ public class PaymentService {
         var order = orderService.getOrderDetail(callback.orderId());
 
         if (order.totalAmount().compareTo(callback.amount()) != 0) {
-            orderService.markOrderFailed(callback.orderId());
+            orderService.markOrderFailed(callback.orderId(), false);
             throw new IllegalStateException("결제 금액 불일치: 주문 금액=" + order.totalAmount() + ", PG 금액=" + callback.amount());
         }
 
