@@ -74,11 +74,33 @@ public class Order extends BaseEntity {
 
     public BigDecimal getFinalAmount() { return finalAmount; }
 
-    public void markAwaitingPayment() { this.status = OrderStatus.AWAITING_PAYMENT; }
-    public void markPaid() { this.status = OrderStatus.PAID; }
-    public void markPaymentDeclined() { this.status = OrderStatus.PAYMENT_DECLINED; }
-    public void markPaymentError() { this.status = OrderStatus.PAYMENT_ERROR; }
-    public void markCancelled() {this.status = OrderStatus.CANCELLED; }
+    public void paid() {
+        if (this.status != OrderStatus.AWAITING_PAYMENT) {
+            throw new IllegalStateException("결제 대기 상태가 아닙니다. 현재 상태: " + this.status);
+        }
+        this.status = OrderStatus.PAID;
+    }
+
+    public void declinePayment() {
+        if (this.status != OrderStatus.AWAITING_PAYMENT) {
+            throw new IllegalStateException("결제 대기 상태가 아닙니다. 현재 상태: " + this.status);
+        }
+        this.status = OrderStatus.PAYMENT_DECLINED;
+    }
+
+    public void errorPayment() {
+        if (this.status != OrderStatus.AWAITING_PAYMENT) {
+            throw new IllegalStateException("결제 대기 상태가 아닙니다. 현재 상태: " + this.status);
+        }
+        this.status = OrderStatus.PAYMENT_ERROR;
+    }
+
+    public void cancel() {
+        if (this.status == OrderStatus.PAID) {
+            throw new IllegalStateException("결제 완료된 주문은 취소할 수 없습니다.");
+        }
+        this.status = OrderStatus.CANCELLED;
+    }
 
     public OrderStatus getStatus() { return status; }
     public PaymentMethod getPaymentMethod() { return paymentMethod; }

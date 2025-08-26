@@ -8,7 +8,6 @@ import com.loopers.domain.order.OrderRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.UserId;
-import com.loopers.infrastructure.order.OrderJpaRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +26,6 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final CouponRepository couponRepository;
-    private final OrderJpaRepository orderJpaRepository;
 
     @Transactional
     public OrderResult createPendingOrder(OrderCriteria criteria) {
@@ -102,16 +100,16 @@ public class OrderService {
         }
 
         // 주문 상태 변경
-        order.markPaid();
+        order.paid();
     }
 
     @Transactional
     public void markOrderFailed(String orderId, boolean businessFailure) {
         Order order = getOrderEntity(orderId);
         if (businessFailure) {
-            order.markPaymentDeclined();
+            order.declinePayment();
         } else {
-            order.markPaymentError();
+            order.errorPayment();
         }
     }
 
