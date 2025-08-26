@@ -34,8 +34,6 @@ public class Payment extends BaseEntity {
         this.amount = amount;
         this.status = PaymentStatus.PENDING;
         this.attemptCount = 0;
-        this.externalPaymentId = null;
-        this.reason = null;
     }
     public static Payment newForOrder(String orderId, String userId, BigDecimal amount) {
         return new Payment(orderId, userId, amount);
@@ -51,7 +49,7 @@ public class Payment extends BaseEntity {
 
     public void startNewAttempt() {
         if (this.status == PaymentStatus.SUCCESS) {
-            throw new IllegalStateException("이미 지불 되었습니다.");
+            throw new IllegalStateException("이미 결제가 성공된 주문입니다.");
         }
         this.status = PaymentStatus.PENDING;
         this.externalPaymentId = null;
@@ -62,10 +60,10 @@ public class Payment extends BaseEntity {
     public boolean isFinalized() { return this.status.isFinalized(); }
 
     public void markRequested(String externalId) {
-        if (this.status != PaymentStatus.PENDING) return;
-        if (this.externalPaymentId == null) {
-            this.externalPaymentId = externalId;
+        if (!this.status.equals(PaymentStatus.PENDING)) {
+            throw new IllegalStateException("PENDING 상태에서만 요청 가능합니다. 현재 상태: " + status);
         }
+        this.externalPaymentId = externalId;
     }
 
     public void applyCallback(String extId, PaymentStatus newStatus, String reason) {
@@ -84,7 +82,7 @@ public class Payment extends BaseEntity {
         return this.status.isSuccess();
     }
 
-    public boolean isFailed() {
+    public boolean isFailure() {
         return this.status.isFailure();
     }
 }

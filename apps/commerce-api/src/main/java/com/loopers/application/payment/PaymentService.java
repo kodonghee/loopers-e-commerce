@@ -6,6 +6,7 @@ import com.loopers.domain.payment.Payment;
 import com.loopers.domain.payment.PaymentRepository;
 import com.loopers.domain.payment.PaymentStatus;
 import com.loopers.domain.point.PointRepository;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -36,19 +37,34 @@ public class PaymentService {
 
         paymentRepository.save(payment);
 
-        var req = new PaymentGateway.Request(
-                criteria.userId(), criteria.orderId(),
-                criteria.cardType(), criteria.cardNo(),
-                finalAmount, callbackUrl
-        );
+        try {
+            var req = new PaymentGateway.Request(
+                    criteria.userId(), criteria.orderId(),
+                    criteria.cardType(), criteria.cardNo(),
+                    finalAmount, callbackUrl
+            );
 
-        var result = gateway.request(req);
+            var result = gateway.request(req);
 
-        if (result.status() == PaymentStatus.DECLINED) {
-            payment.
+            payment.applyCallback(result.paymentId(), PaymentStatus.PENDING, "PG 결제 대기중");
+            return new PaymentResult(criteria.orderId(), result.paymentId(), "PENDING");
+        } catch (FeignException.BadRequest e) {
+            payment.applyCallback(null, PaymentStatus.DECLINED, "잘못된 요청: " + e.getMessage()); // 결제 상태 변경
+            orderService.getOrderEntity(criteria.orderId()).declinePayment(); // 주문 상태 변경
+            throw e;
+        } catch (FeignException.InternalServerError e) {
+            payment.applyCallback(null, PaymentStatus.ERROR, "PG 서버 오류: " + e.getMessage());
+            orderService.getOrderEntity(criteria.orderId()).errorPayment();
+            throw e;
+        } catch (feign.RetryableException e) {
+            payment.applyCallback(null, PaymentStatus.ERROR, "네트워크 오류: " + e.getMessage());
+            orderService.getOrderEntity(criteria.orderId()).errorPayment();
+            throw e;
+        } catch (Exception e) {
+            payment.applyCallback(null, PaymentStatus.ERROR, "알 수 없는 오류: " + e.getMessage());
+            orderService.getOrderEntity(criteria.orderId()).errorPayment();
+            throw e;
         }
-
-        return new PaymentResult(criteria.orderId(), result.paymentId(), result.status());
     }
 
     @Transactional
@@ -71,7 +87,7 @@ public class PaymentService {
             orderService.markOrderFailed(criteria.orderId(), true);
             throw e;
         } catch (Exception e) {
-            payment.applyCallback(null, PaymentStatus.FAILED, "시스템 오류: " + e.getMessage());
+            payment.applyCallback(null, PaymentStatus.ERROR, "시스템 오류: " + e.getMessage());
             orderService.markOrderFailed(criteria.orderId(), false);
             throw e;
         }
