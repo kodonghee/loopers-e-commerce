@@ -58,8 +58,10 @@ resilience4j:
         max-attempts: 3                # 최대 3번 재시도
         wait-duration: 500ms           # 재시도 간격 0.5초
         retry-exceptions:
-          - java.io.IOException
-          - org.springframework.web.client.ResourceAccessException
+          - feign.RetryableException         # 네트워크 오류 (timeout, connect fail 등)
+          - feign.FeignException$InternalServerError  # 500 오류도 재시도
+        ignore-exceptions:
+          - feign.FeignException$BadRequest  # 400은 무조건 클라이언트 잘못 → retry 안함
 
 pg:
   base-url: http://localhost:8082

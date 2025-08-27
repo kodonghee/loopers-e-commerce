@@ -1,6 +1,7 @@
 package com.loopers.infrastructure.payment.pg;
 
 import com.loopers.application.payment.port.PaymentGateway;
+import com.loopers.domain.payment.PaymentStatus;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
@@ -25,12 +26,7 @@ public class PgClientAdapter implements PaymentGateway {
         log.info(">>> PG Raw Response: {}", pgResponse);
 
         if ("FAIL".equals(pgResponse.meta().result())) {
-            return new Response(
-                    request.orderId(),
-                    null,
-                    "FAILED",
-                    pgResponse.meta().message()
-            );
+            throw new IllegalStateException("PG 응답 실패: " + pgResponse.meta().message());
         }
         return new Response(
                 request.orderId(),
@@ -61,7 +57,7 @@ public class PgClientAdapter implements PaymentGateway {
         return new PaymentGateway.Response(
                 req.orderId(),
                 null,
-                "FAILED",
+                PaymentStatus.ERROR.name(),
                 "Fallback due to: " + t.getMessage());
     }
 }

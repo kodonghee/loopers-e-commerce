@@ -66,16 +66,15 @@ public class Payment extends BaseEntity {
         this.externalPaymentId = externalId;
     }
 
-    public void applyCallback(String extId, PaymentStatus newStatus, String reason) {
+    public void updateStatus(String extId, PaymentStatus newStatus, String reason) {
         if (this.status != PaymentStatus.PENDING) return;
         if (this.externalPaymentId != null && !this.externalPaymentId.equals(extId)) return;
         this.status = newStatus;
         this.reason = reason;
     }
 
-    @Deprecated
-    public void applyResult(String status, String reason) {
-        applyCallback(this.externalPaymentId, PaymentStatus.valueOf(status), reason);
+    public void applyCallback(String extId, PaymentStatus newStatus, String reason) {
+        updateStatus(extId, newStatus, reason);
     }
 
     public boolean isSuccess() {

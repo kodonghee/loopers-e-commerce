@@ -172,7 +172,7 @@ class OrderServiceIntegrationTest {
 
             // assert
             assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
-            assertThat(orderRepository.findByOrderId(order.orderId()).get().getStatus()).isEqualTo(OrderStatus.PAYMENT_FAILED);
+            assertThat(orderRepository.findByOrderId(order.orderId()).get().getStatus()).isEqualTo(OrderStatus.PAYMENT_DECLINED);
             assertThat(couponRepository.findById(userCouponId).get().isUsed()).isFalse();
             assertThat(productRepository.findById(product.getId()).get().getStock().getValue()).isEqualTo(1);
             assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())
@@ -216,7 +216,7 @@ class OrderServiceIntegrationTest {
                     .isEqualByComparingTo(new BigDecimal("300000"));
             assertThat(orderRepository.findAllByUserId(new UserId(USER_ID)))
                     .hasSize(1)
-                    .allSatisfy(o -> assertThat(o.getStatus()).isEqualTo(OrderStatus.PAYMENT_FAILED));
+                    .allSatisfy(o -> assertThat(o.getStatus()).isEqualTo(OrderStatus.PAYMENT_DECLINED));
         }
 
         @DisplayName("잘못된 쿠폰 사용 시, 전체 주문이 실패한다.")
@@ -261,7 +261,7 @@ class OrderServiceIntegrationTest {
             assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())
                     .isEqualByComparingTo(new BigDecimal("300000"));
             assertThat(orderRepository.findByOrderId(order.orderId()).get().getStatus())
-                    .isEqualTo(OrderStatus.PAYMENT_FAILED);
+                    .isEqualTo(OrderStatus.PAYMENT_DECLINED);
         }
 
         @DisplayName("존재하지 않는 쿠폰 사용 시, 전체 주문이 실패한다.")
@@ -300,7 +300,7 @@ class OrderServiceIntegrationTest {
             assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())
                     .isEqualByComparingTo(new BigDecimal("300000"));
             assertThat(orderRepository.findByOrderId(order.orderId()).get().getStatus())
-                    .isEqualTo(OrderStatus.PAYMENT_FAILED);
+                    .isEqualTo(OrderStatus.PAYMENT_DECLINED);
         }
 
         @DisplayName("이미 사용한 쿠폰을 사용할 경우, 전체 주문이 실패한다.")
@@ -359,7 +359,7 @@ class OrderServiceIntegrationTest {
                     .isEqualByComparingTo(new BigDecimal("250000"));
             assertThat(orderRepository.findAllByUserId(new UserId(USER_ID)).size()).isEqualTo(2);
             assertThat(orderRepository.findByOrderId(secondOrder.orderId()).get().getStatus())
-                    .isEqualTo(OrderStatus.PAYMENT_FAILED);
+                    .isEqualTo(OrderStatus.PAYMENT_DECLINED);
         }
     }
 

@@ -7,11 +7,14 @@ import com.loopers.application.payment.PaymentService;
 import com.loopers.application.product.ProductCriteria;
 import com.loopers.application.product.ProductFacade;
 import com.loopers.domain.brand.Brand;
+import com.loopers.domain.coupon.Coupon;
+import com.loopers.domain.coupon.CouponRepository;
 import com.loopers.domain.coupon.CouponType;
-import com.loopers.domain.order.OrderStatus;
-import com.loopers.domain.order.PaymentMethod;
+import com.loopers.domain.order.*;
+import com.loopers.domain.order.Order;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
@@ -45,9 +48,17 @@ class OrderServiceConcurrencyIntegrationTest {
     @Autowired
     private PaymentService paymentService;
     @Autowired
+    private OrderPaymentProcessor orderPaymentProcessor;
+    @Autowired
     private ProductFacade productFacade;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private OrderRepository orderRepository;
+    @Autowired
+    private CouponRepository couponRepository;
+    @Autowired
+    private ProductRepository productRepository;
     @Autowired
     private PointJpaRepository pointJpaRepository;
     @Autowired
@@ -102,8 +113,21 @@ class OrderServiceConcurrencyIntegrationTest {
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    OrderResult order = orderService.createPendingOrder(orderCriteria);
-                    orderService.confirmPayment(order.orderId(), userCouponId);
+                    OrderResult orderResult = orderService.createPendingOrder(orderCriteria);
+
+                    Order order = orderRepository.findByOrderId(orderResult.orderId())
+                            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다."));
+
+                    List<Product> products = productRepository.findByIdForUpdate(
+                            order.getOrderItems().stream()
+                                    .map(OrderItem::getProductId)
+                                    .toList()
+                    );
+
+                    Coupon coupon = couponRepository.findByIdForUpdate(userCouponId)
+                                    .orElseThrow();
+
+                    orderPaymentProcessor.confirmPayment(order, products, coupon);
                 } catch (Exception ignored) {
                 } finally {
                     latch.countDown();
@@ -192,8 +216,16 @@ class OrderServiceConcurrencyIntegrationTest {
         for (int i = 0; i < threadCount; i++) {
             es.submit(() -> {
                 try {
-                    var order = orderService.createPendingOrder(payload);
-                    orderService.confirmPayment(order.orderId(), null);
+                    var orderResult = orderService.createPendingOrder(payload);
+
+                    Order order = orderRepository.findByOrderId(orderResult.orderId())
+                                    .orElseThrow();
+
+                    List<Product> products = productRepository.findByIdForUpdate(
+                            order.getOrderItems().stream().map(OrderItem::getProductId).toList()
+                    );
+
+                    orderPaymentProcessor.confirmPayment(order, products, null);
                 } catch (Exception ignored) {
                 } finally {
                     latch.countDown();

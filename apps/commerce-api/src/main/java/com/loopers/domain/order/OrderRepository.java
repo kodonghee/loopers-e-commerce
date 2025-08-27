@@ -11,5 +11,4 @@ public interface OrderRepository {
     List<Order> findAllByUserId(UserId userId);
     Optional<Order> findById(Long id);
     Optional<Order> findByOrderId(String orderId);
-    int markOrderFailed(String orderId);
 }

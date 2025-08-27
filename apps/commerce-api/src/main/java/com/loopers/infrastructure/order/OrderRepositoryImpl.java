@@ -35,9 +35,4 @@ public class OrderRepositoryImpl implements OrderRepository {
     public Optional<Order> findByOrderId(String orderId) {
         return orderJpaRepository.findByOrderId(orderId);
     }
-
-    @Override
-    public int markOrderFailed(String orderId) {
-        return orderJpaRepository.markOrderFailed(orderId, OrderStatus.PAYMENT_FAILED);
-    }
 }

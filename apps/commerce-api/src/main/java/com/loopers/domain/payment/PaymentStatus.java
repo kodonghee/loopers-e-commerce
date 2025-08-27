@@ -17,4 +17,12 @@ public enum PaymentStatus {
     public boolean isFailure() {
         return this == DECLINED || this == ERROR;
     }
+
+    public static PaymentStatus fromPgStatus(String pgStatus) {
+        return switch (pgStatus) {
+            case "SUCCESS" -> SUCCESS;
+            case "FAILED" -> DECLINED;
+            default -> ERROR;
+        };
+    }
 }
