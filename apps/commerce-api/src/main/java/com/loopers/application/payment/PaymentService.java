@@ -11,6 +11,8 @@ import com.loopers.domain.payment.Payment;
 import com.loopers.domain.payment.PaymentRepository;
 import com.loopers.domain.payment.PaymentStatus;
 import com.loopers.domain.payment.event.PaymentCompletedEvent;
+import com.loopers.domain.payment.event.PaymentDeclinedEvent;
+import com.loopers.domain.payment.event.PaymentErrorEvent;
 import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
@@ -73,7 +75,9 @@ public class PaymentService {
 
             if ("ERROR".equals(result.status())) {
                 payment.updateStatus(null, PaymentStatus.ERROR, result.reason());
-                order.errorPayment();
+                eventPublisher.publishEvent(
+                        PaymentErrorEvent.of(order.getOrderId(), order.getUserId(), result.reason())
+                );
                 return PaymentResult.failed(order.getOrderId());
             }
 
@@ -81,19 +85,27 @@ public class PaymentService {
             return PaymentResult.pending(order.getOrderId(), result.paymentId());
         } catch (FeignException.BadRequest e) {
             payment.updateStatus(null, PaymentStatus.DECLINED, "잘못된 요청: " + e.getMessage()); // 결제 상태 변경
-            order.declinePayment(); // 주문 상태 변경
+            eventPublisher.publishEvent(
+                    PaymentDeclinedEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
+            );
             throw e;
         } catch (PgServerUnstableException e) {
             payment.updateStatus(null, PaymentStatus.ERROR, "PG 서버 오류: " + e.getMessage());
-            order.errorPayment();
+            eventPublisher.publishEvent(
+                    PaymentErrorEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
+            );
             throw e;
         } catch (feign.RetryableException e) {
             payment.updateStatus(null, PaymentStatus.ERROR, "네트워크 오류: " + e.getMessage());
-            order.errorPayment();
+            eventPublisher.publishEvent(
+                    PaymentErrorEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
+            );
             throw e;
         } catch (Exception e) {
             payment.updateStatus(null, PaymentStatus.ERROR, "알 수 없는 오류: " + e.getMessage());
-            order.errorPayment();
+            eventPublisher.publishEvent(
+                    PaymentErrorEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
+            );
             throw e;
         }
     }
@@ -123,7 +135,6 @@ public class PaymentService {
 
             paymentProcessor.confirmPayment(order, products);
             payment.updateStatus(null, PaymentStatus.SUCCESS, "포인트 결제 성공");
-            order.paid();
 
             eventPublisher.publishEvent(PaymentCompletedEvent.of(
                     order.getOrderId(),
@@ -134,11 +145,15 @@ public class PaymentService {
             return PaymentResult.success(order.getOrderId());
         } catch (IllegalArgumentException e) {
             payment.updateStatus(null, PaymentStatus.DECLINED, e.getMessage());
-            order.declinePayment();
+            eventPublisher.publishEvent(
+                    PaymentDeclinedEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
+            );
             throw e;
         } catch (Exception e) {
             payment.updateStatus(null, PaymentStatus.ERROR, "시스템 오류: " + e.getMessage());
-            order.errorPayment();
+            eventPublisher.publishEvent(
+                    PaymentErrorEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
+            );
             throw e;
         }
     }
@@ -158,7 +173,9 @@ public class PaymentService {
 
         if (order.getFinalAmount().compareTo(callback.amount()) != 0) {
             payment.updateStatus(callback.paymentId(), PaymentStatus.ERROR, "금액 불일치");
-            order.errorPayment();
+            eventPublisher.publishEvent(
+                    PaymentErrorEvent.of(order.getOrderId(), order.getUserId(), "금액 불일치")
+            );
             throw new IllegalStateException("결제 금액 불일치: 주문 금액=" + order.getFinalAmount() + ", PG 금액=" + callback.amount());
         }
 
@@ -174,7 +191,6 @@ public class PaymentService {
                     : null;
 
             paymentProcessor.confirmPayment(order, products);
-            order.paid();
 
             eventPublisher.publishEvent(PaymentCompletedEvent.of(
                     order.getOrderId(),
@@ -183,9 +199,13 @@ public class PaymentService {
                     coupon != null ? coupon.getId() : null
             ));
         } else if (newStatus == PaymentStatus.DECLINED) {
-            order.declinePayment();
+            eventPublisher.publishEvent(
+                    PaymentDeclinedEvent.of(order.getOrderId(), order.getUserId(), callback.reason())
+            );
         } else {
-            order.errorPayment();
+            eventPublisher.publishEvent(
+                    PaymentErrorEvent.of(order.getOrderId(), order.getUserId(), callback.reason())
+            );
         }
     }
 
