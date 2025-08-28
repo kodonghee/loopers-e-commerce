@@ -3,12 +3,14 @@ package com.loopers.application.order;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderRepository;
+import com.loopers.domain.order.event.OrderCreatedEvent;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.UserId;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /*주문 생성*/
     @Transactional
@@ -47,6 +50,13 @@ public class OrderService {
                 criteria.paymentMethod()
         );
         orderRepository.save(order);
+
+        eventPublisher.publishEvent(OrderCreatedEvent.of(
+                order.getOrderId(),
+                order.getUserId(),
+                order.getTotalAmount(),
+                productIds
+        ));
         return OrderMapper.fromOrder(order);
     }
 
