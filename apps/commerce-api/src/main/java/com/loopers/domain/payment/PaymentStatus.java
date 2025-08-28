@@ -7,7 +7,7 @@ public enum PaymentStatus {
     ERROR;    // 시스템 장애 (PG 장애, Timeout 등)
 
     public boolean isFinalized() {
-        return this != PENDING;
+        return this == SUCCESS || this == DECLINED || this == ERROR;
     }
 
     public boolean isSuccess() {

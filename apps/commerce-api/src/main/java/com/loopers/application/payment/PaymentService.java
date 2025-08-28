@@ -10,6 +10,7 @@ import com.loopers.domain.order.OrderRepository;
 import com.loopers.domain.payment.Payment;
 import com.loopers.domain.payment.PaymentRepository;
 import com.loopers.domain.payment.PaymentStatus;
+import com.loopers.domain.payment.event.PaymentCompletedEvent;
 import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
@@ -18,6 +19,7 @@ import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +38,7 @@ public class PaymentService {
     private final CouponRepository couponRepository;
     private final ProductRepository productRepository;
     private final OrderPaymentProcessor paymentProcessor;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${pg.callback-url:http://localhost:8080/api/v1/payments/callback}")
     private String callbackUrl;
@@ -118,9 +121,16 @@ public class PaymentService {
                     order.getOrderItems().stream().map(OrderItem::getProductId).toList()
             );
 
-            paymentProcessor.confirmPayment(order, products, coupon);
+            paymentProcessor.confirmPayment(order, products);
             payment.updateStatus(null, PaymentStatus.SUCCESS, "포인트 결제 성공");
             order.paid();
+
+            eventPublisher.publishEvent(PaymentCompletedEvent.of(
+                    order.getOrderId(),
+                    order.getUserId(),
+                    finalAmount,
+                    coupon != null ? coupon.getId() : null
+            ));
             return PaymentResult.success(order.getOrderId());
         } catch (IllegalArgumentException e) {
             payment.updateStatus(null, PaymentStatus.DECLINED, e.getMessage());
@@ -163,8 +173,15 @@ public class PaymentService {
                     ? couponRepository.findById(callback.couponId()).orElse(null)
                     : null;
 
-            paymentProcessor.confirmPayment(order, products, coupon);
+            paymentProcessor.confirmPayment(order, products);
             order.paid();
+
+            eventPublisher.publishEvent(PaymentCompletedEvent.of(
+                    order.getOrderId(),
+                    order.getUserId(),
+                    callback.amount(),
+                    coupon != null ? coupon.getId() : null
+            ));
         } else if (newStatus == PaymentStatus.DECLINED) {
             order.declinePayment();
         } else {

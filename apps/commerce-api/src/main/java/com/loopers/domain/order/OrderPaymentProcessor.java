@@ -23,9 +23,11 @@ public class OrderPaymentProcessor {
      */
     @Transactional
     public BigDecimal prepareForPayment(Order order, Coupon coupon) {
-        if (coupon != null) {
+        BigDecimal amount = order.getFinalAmount();
+        if (coupon != null && !coupon.isUsed()) {
             coupon.checkOwner(order.getUserId());
-            BigDecimal discount = coupon.calculateDiscount(order.getTotalAmount());
+
+            BigDecimal discount = coupon.calculateDiscount(order.getFinalAmount());
             order.applyDiscount(discount);
         }
         return order.getFinalAmount();
@@ -35,7 +37,7 @@ public class OrderPaymentProcessor {
      * 결제 확정 처리 (재고 차감 + 쿠폰 사용 + 주문 상태 변경)
      */
     @Transactional
-    public void confirmPayment(Order order, List<Product> products, Coupon coupon) {
+    public void confirmPayment(Order order, List<Product> products) {
 
         // 재고 차감
         Map<Long, Product> productMap = products.stream()
@@ -48,13 +50,6 @@ public class OrderPaymentProcessor {
             }
             product.decreaseStock(item.getQuantity());
         });
-
-        // 쿠폰 사용
-        if (coupon != null) {
-            Coupon lockedCoupon = couponRepository.findByIdForUpdate(coupon.getId())
-                            .orElseThrow(() -> new IllegalArgumentException("쿠폰이 존재하지 않습니다."));
-            lockedCoupon.markAsUsed();
-        }
     }
 
 }

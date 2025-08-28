@@ -66,10 +66,16 @@ public class Order extends BaseEntity {
             throw new IllegalArgumentException("할인 금액은 음수가 될 수 없습니다.");
         }
 
-        if (discountAmount.compareTo(getTotalAmount()) > 0) {
+        if (discountAmount.compareTo(this.finalAmount) > 0) {
             throw new IllegalArgumentException("할인 금액은 주문 금액을 초과할 수 없습니다.");
         }
         this.finalAmount = this.getFinalAmount().subtract(discountAmount);
+    }
+
+    public void validateAmountsMatch() {
+        if (finalAmount.compareTo(getTotalAmount()) != 0) {
+            throw new IllegalStateException("최종 금액이 주문 상품 금액 총합과 일치하지 않습니다.");
+        }
     }
 
     public BigDecimal getFinalAmount() { return finalAmount; }
