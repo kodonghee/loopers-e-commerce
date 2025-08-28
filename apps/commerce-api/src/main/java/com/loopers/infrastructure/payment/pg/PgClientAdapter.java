@@ -2,11 +2,15 @@ package com.loopers.infrastructure.payment.pg;
 
 import com.loopers.application.payment.port.PaymentGateway;
 import com.loopers.domain.payment.PaymentStatus;
+import feign.FeignException;
+import feign.Request;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
+import java.util.Collection;
 
 
 @Component
@@ -26,7 +30,15 @@ public class PgClientAdapter implements PaymentGateway {
         log.info(">>> PG Raw Response: {}", pgResponse);
 
         if ("FAIL".equals(pgResponse.meta().result())) {
-            throw new IllegalStateException("PG 응답 실패: " + pgResponse.meta().message());
+            if ("Internal Server Error".equals(pgResponse.meta().errorCode())) {
+                throw new PgServerUnstableException(pgResponse.meta().message());
+            }
+            return new Response(
+                    request.orderId(),
+                    null,
+                    "FAILED",
+                    pgResponse.meta().message()
+            );
         }
         return new Response(
                 request.orderId(),

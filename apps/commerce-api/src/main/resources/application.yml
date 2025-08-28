@@ -60,6 +60,7 @@ resilience4j:
         retry-exceptions:
           - feign.RetryableException         # 네트워크 오류 (timeout, connect fail 등)
           - feign.FeignException$InternalServerError  # 500 오류도 재시도
+          - com.loopers.infrastructure.payment.pg.PgServerUnstableException
         ignore-exceptions:
           - feign.FeignException$BadRequest  # 400은 무조건 클라이언트 잘못 → retry 안함
 

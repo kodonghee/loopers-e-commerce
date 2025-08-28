@@ -24,6 +24,7 @@ import com.loopers.infrastructure.order.OrderJpaRepository;
 import com.loopers.infrastructure.point.PointJpaRepository;
 import com.loopers.infrastructure.product.ProductJpaRepository;
 import com.loopers.utils.DatabaseCleanUp;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -37,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Slf4j
 @SpringBootTest
 @DisplayName("주문 동시성 테스트")
 class OrderServiceConcurrencyIntegrationTest {
@@ -115,19 +117,16 @@ class OrderServiceConcurrencyIntegrationTest {
                 try {
                     OrderResult orderResult = orderService.createPendingOrder(orderCriteria);
 
-                    Order order = orderRepository.findByOrderId(orderResult.orderId())
-                            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다."));
-
-                    List<Product> products = productRepository.findByIdForUpdate(
-                            order.getOrderItems().stream()
-                                    .map(OrderItem::getProductId)
-                                    .toList()
+                    PaymentCriteria paymentCriteria = new PaymentCriteria(
+                            USER_ID,
+                            orderResult.orderId(),
+                            null,
+                            null,
+                            orderResult.totalAmount(),
+                            userCouponId
                     );
 
-                    Coupon coupon = couponRepository.findByIdForUpdate(userCouponId)
-                                    .orElseThrow();
-
-                    orderPaymentProcessor.confirmPayment(order, products, coupon);
+                    paymentService.processPointPayment(paymentCriteria);
                 } catch (Exception ignored) {
                 } finally {
                     latch.countDown();
@@ -175,7 +174,9 @@ class OrderServiceConcurrencyIntegrationTest {
                             null
                     );
                     paymentService.processPointPayment(paymentCriteria);
-                } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    log.warn("결제 실패: {}", e.getMessage());
+                }
                 finally { latch.countDown(); }
             });
         }
@@ -184,6 +185,8 @@ class OrderServiceConcurrencyIntegrationTest {
         assertThat(completed).as("모든 스레드가 제한 시간 내 실행을 완료해야 함").isTrue();
 
         Long successOrders = orderJpaRepository.countByStatus(OrderStatus.PAID);
+
+        assertThat(successOrders).isLessThanOrEqualTo(3);
 
         BigDecimal expectedRemain = new BigDecimal("300000")
                 .subtract(new BigDecimal("100000").multiply(new BigDecimal(successOrders)));

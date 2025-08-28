@@ -208,7 +208,7 @@ class PaymentServiceIntegrationTest {
                 .isInstanceOf(IllegalStateException.class);
 
         var order = orderService.getOrderDetail(criteria.orderId());
-        assertThat(order.status()).isEqualTo(OrderStatus.PAYMENT_DECLINED);
+        assertThat(order.status()).isEqualTo(OrderStatus.PAYMENT_ERROR);
     }
 
     @Test

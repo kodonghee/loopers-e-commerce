@@ -1,6 +1,7 @@
 package com.loopers.domain.order;
 
 import com.loopers.domain.coupon.Coupon;
+import com.loopers.domain.coupon.CouponRepository;
 import com.loopers.domain.product.Product;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -14,6 +15,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Component
 public class OrderPaymentProcessor {
+
+    private final CouponRepository couponRepository;
 
     /*
      * 결제 직전 최종 금액 계산
@@ -48,7 +51,9 @@ public class OrderPaymentProcessor {
 
         // 쿠폰 사용
         if (coupon != null) {
-            coupon.markAsUsed();
+            Coupon lockedCoupon = couponRepository.findByIdForUpdate(coupon.getId())
+                            .orElseThrow(() -> new IllegalArgumentException("쿠폰이 존재하지 않습니다."));
+            lockedCoupon.markAsUsed();
         }
     }
 

@@ -13,6 +13,7 @@ import com.loopers.domain.payment.PaymentStatus;
 import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
+import com.loopers.infrastructure.payment.pg.PgServerUnstableException;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +35,7 @@ public class PaymentService {
     private final OrderRepository orderRepository;
     private final CouponRepository couponRepository;
     private final ProductRepository productRepository;
-    private final OrderPaymentProcessor paymentProcessor = new OrderPaymentProcessor();
+    private final OrderPaymentProcessor paymentProcessor;
 
     @Value("${pg.callback-url:http://localhost:8080/api/v1/payments/callback}")
     private String callbackUrl;
@@ -67,13 +68,19 @@ public class PaymentService {
 
             var result = gateway.request(req);
 
+            if ("ERROR".equals(result.status())) {
+                payment.updateStatus(null, PaymentStatus.ERROR, result.reason());
+                order.errorPayment();
+                return PaymentResult.failed(order.getOrderId());
+            }
+
             payment.markRequested(result.paymentId());
             return PaymentResult.pending(order.getOrderId(), result.paymentId());
         } catch (FeignException.BadRequest e) {
             payment.updateStatus(null, PaymentStatus.DECLINED, "잘못된 요청: " + e.getMessage()); // 결제 상태 변경
             order.declinePayment(); // 주문 상태 변경
             throw e;
-        } catch (FeignException.InternalServerError e) {
+        } catch (PgServerUnstableException e) {
             payment.updateStatus(null, PaymentStatus.ERROR, "PG 서버 오류: " + e.getMessage());
             order.errorPayment();
             throw e;
@@ -113,6 +120,7 @@ public class PaymentService {
 
             paymentProcessor.confirmPayment(order, products, coupon);
             payment.updateStatus(null, PaymentStatus.SUCCESS, "포인트 결제 성공");
+            order.paid();
             return PaymentResult.success(order.getOrderId());
         } catch (IllegalArgumentException e) {
             payment.updateStatus(null, PaymentStatus.DECLINED, e.getMessage());
