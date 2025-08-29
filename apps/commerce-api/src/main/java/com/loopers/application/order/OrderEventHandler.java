@@ -29,8 +29,7 @@ public class OrderEventHandler {
                 });
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMPLETION)
     public void handle(PaymentDeclinedEvent event) {
         orderRepository.findByOrderId(event.orderId())
                 .ifPresent(order -> {
@@ -39,8 +38,7 @@ public class OrderEventHandler {
                 });
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMPLETION)
     public void handle(PaymentErrorEvent event) {
         orderRepository.findByOrderId(event.orderId())
                 .ifPresent(order -> {
