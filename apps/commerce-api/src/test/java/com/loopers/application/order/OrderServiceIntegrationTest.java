@@ -29,9 +29,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
 class OrderServiceIntegrationTest {
@@ -171,7 +173,10 @@ class OrderServiceIntegrationTest {
 
             // assert
             assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
-            assertThat(orderRepository.findByOrderId(order.orderId()).get().getStatus()).isEqualTo(OrderStatus.PAYMENT_DECLINED);
+            await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+                OrderStatus status = orderRepository.findByOrderId(order.orderId()).get().getStatus();
+                assertThat(status).isEqualTo(OrderStatus.PAYMENT_DECLINED);
+            });
             assertThat(couponRepository.findById(userCouponId).get().isUsed()).isFalse();
             assertThat(productRepository.findById(product.getId()).get().getStock().getValue()).isEqualTo(1);
             assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())

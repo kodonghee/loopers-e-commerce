@@ -6,8 +6,9 @@ import com.loopers.domain.payment.event.PaymentDeclinedEvent;
 import com.loopers.domain.payment.event.PaymentErrorEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -18,6 +19,7 @@ public class OrderEventHandler {
 
     private final OrderRepository orderRepository;
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(PaymentCompletedEvent event) {
         orderRepository.findByOrderId(event.orderId())
@@ -27,7 +29,8 @@ public class OrderEventHandler {
                 });
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void handle(PaymentDeclinedEvent event) {
         orderRepository.findByOrderId(event.orderId())
                 .ifPresent(order -> {
@@ -36,7 +39,8 @@ public class OrderEventHandler {
                 });
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void handle(PaymentErrorEvent event) {
         orderRepository.findByOrderId(event.orderId())
                 .ifPresent(order -> {

@@ -7,7 +7,6 @@ import com.loopers.application.payment.PaymentService;
 import com.loopers.application.product.ProductCriteria;
 import com.loopers.application.product.ProductFacade;
 import com.loopers.domain.brand.Brand;
-import com.loopers.domain.coupon.Coupon;
 import com.loopers.domain.coupon.CouponRepository;
 import com.loopers.domain.coupon.CouponType;
 import com.loopers.domain.order.*;
@@ -24,8 +23,9 @@ import com.loopers.infrastructure.order.OrderJpaRepository;
 import com.loopers.infrastructure.point.PointJpaRepository;
 import com.loopers.infrastructure.product.ProductJpaRepository;
 import com.loopers.utils.DatabaseCleanUp;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -37,8 +37,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
-@Slf4j
 @SpringBootTest
 @DisplayName("주문 동시성 테스트")
 class OrderServiceConcurrencyIntegrationTest {
@@ -73,6 +73,8 @@ class OrderServiceConcurrencyIntegrationTest {
     private CouponJpaRepository couponJpaRepository;
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
+
+    private static final Logger log = LoggerFactory.getLogger(OrderServiceConcurrencyIntegrationTest.class);
 
     private static final String USER_ID = "Annie";
     private Long brandId;
@@ -184,15 +186,17 @@ class OrderServiceConcurrencyIntegrationTest {
         boolean completed = latch.await(10, TimeUnit.SECONDS);
         assertThat(completed).as("모든 스레드가 제한 시간 내 실행을 완료해야 함").isTrue();
 
-        Long successOrders = orderJpaRepository.countByStatus(OrderStatus.PAID);
+        await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+            Long successOrders = orderJpaRepository.countByStatus(OrderStatus.PAID);
 
-        assertThat(successOrders).isLessThanOrEqualTo(3);
+            assertThat(successOrders).isLessThanOrEqualTo(3);
 
-        BigDecimal expectedRemain = new BigDecimal("300000")
-                .subtract(new BigDecimal("100000").multiply(new BigDecimal(successOrders)));
+            BigDecimal expectedRemain = new BigDecimal("300000")
+                    .subtract(new BigDecimal("100000").multiply(new BigDecimal(successOrders)));
 
-        BigDecimal actualRemain = pointJpaRepository.findByUserId(USER_ID).orElseThrow().getPointValue();
-        assertThat(actualRemain).isEqualByComparingTo(expectedRemain);
+            BigDecimal actualRemain = pointJpaRepository.findByUserId(USER_ID).orElseThrow().getPointValue();
+            assertThat(actualRemain).isEqualByComparingTo(expectedRemain);
+        });
     }
 
     @DisplayName("동일한 상품에 대해 여러 주문이 동시에 요청되어도, 재고가 정상적으로 차감되어야 한다.")
