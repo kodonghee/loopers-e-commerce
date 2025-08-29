@@ -87,7 +87,7 @@ class PaymentServiceIntegrationTest {
         );
         OrderResult order = orderService.createPendingOrder(orderCriteria);
 
-        return new PaymentCriteria(
+        PaymentCriteria criteria = new PaymentCriteria(
                 USER_ID,
                 order.orderId(),
                 "SAMSUNG",
@@ -95,6 +95,9 @@ class PaymentServiceIntegrationTest {
                 order.totalAmount(),
                 null
         );
+
+        paymentService.requestCardPayment(criteria);
+        return criteria;
     }
 
     @Test
@@ -236,6 +239,6 @@ class PaymentServiceIntegrationTest {
 
         // Assert
         assertThat(result.orderId()).isEqualTo(criteria.orderId());
-        assertThat(result.status()).isEqualTo("SUCCESS");
+        assertThat(result.status()).isEqualTo(PaymentStatus.SUCCESS);
     }
 }
