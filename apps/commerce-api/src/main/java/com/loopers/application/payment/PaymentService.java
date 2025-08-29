@@ -3,10 +3,7 @@ package com.loopers.application.payment;
 import com.loopers.application.payment.port.PaymentGateway;
 import com.loopers.domain.coupon.Coupon;
 import com.loopers.domain.coupon.CouponRepository;
-import com.loopers.domain.order.Order;
-import com.loopers.domain.order.OrderItem;
-import com.loopers.domain.order.OrderPaymentProcessor;
-import com.loopers.domain.order.OrderRepository;
+import com.loopers.domain.order.*;
 import com.loopers.domain.payment.Payment;
 import com.loopers.domain.payment.PaymentRepository;
 import com.loopers.domain.payment.PaymentStatus;
@@ -140,7 +137,8 @@ public class PaymentService {
                     order.getOrderId(),
                     order.getUserId(),
                     finalAmount,
-                    coupon != null ? coupon.getId() : null
+                    coupon != null ? coupon.getId() : null,
+                    PaymentMethod.POINTS
             ));
             return PaymentResult.success(order.getOrderId());
         } catch (IllegalArgumentException e) {
@@ -196,7 +194,8 @@ public class PaymentService {
                     order.getOrderId(),
                     order.getUserId(),
                     callback.amount(),
-                    coupon != null ? coupon.getId() : null
+                    coupon != null ? coupon.getId() : null,
+                    PaymentMethod.CARD
             ));
         } else if (newStatus == PaymentStatus.DECLINED) {
             eventPublisher.publishEvent(
