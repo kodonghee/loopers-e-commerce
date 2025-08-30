@@ -14,9 +14,4 @@ public interface OrderJpaRepository extends JpaRepository<Order, Long> {
     List<Order> findAllByUserId(String userId);
     long countByStatus(OrderStatus status);
     Optional<Order> findByOrderId(String orderId);
-
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("update Order o set o.status = :status where o.orderId = :orderId")
-    int markOrderFailed(@Param("orderId") String orderId,
-                        @Param("status") OrderStatus status);
 }

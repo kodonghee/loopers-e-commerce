@@ -16,7 +16,9 @@ public class PaymentV1Dto {
             @Schema(example = "SAMSUNG") String cardType,
             @Schema(example = "1234-5678-9814-1451") String cardNo,
             @Schema(example = "5000") BigDecimal amount,
-            @Schema(example = "123") Long couponId
+            @Schema(example = "123") Long couponId,
+
+            @Schema(example = "정상 승인되었습니다.") String reason
     ) {
         public boolean isCard() {
             return paymentMethod == PaymentMethod.CARD;
@@ -50,7 +52,7 @@ public class PaymentV1Dto {
             return new PaymentResponse(
                     result.orderId(),
                     result.paymentId(),
-                    result.status()
+                    result.status().name()
             );
         }
     }
@@ -61,11 +63,13 @@ public class PaymentV1Dto {
             String status,
             String userId,
             BigDecimal amount,
-            Long couponId
+            Long couponId,
+            String reason
+
     ) {
         public PaymentCallback toCallback() {
             return new PaymentCallback(
-                    orderId, paymentId, status, userId, amount, couponId
+                    orderId, paymentId, status, userId, amount, couponId, reason
 
             );
         }

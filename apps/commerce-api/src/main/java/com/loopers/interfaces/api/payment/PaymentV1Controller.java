@@ -49,7 +49,8 @@ public class PaymentV1Controller implements PaymentV1ApiSpec {
 
     @PostMapping("/callback")
     @Override
-    public void handleCallback(@RequestBody PaymentV1Dto.PaymentCallbackRequest request) {
+    public ApiResponse<Void> handleCallback(@RequestBody PaymentV1Dto.PaymentCallbackRequest request) {
         paymentService.handlePgCallback(request.toCallback());
+        return ApiResponse.success(null);
     }
 }

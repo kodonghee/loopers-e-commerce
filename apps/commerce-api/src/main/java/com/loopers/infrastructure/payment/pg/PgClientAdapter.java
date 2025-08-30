@@ -1,11 +1,16 @@
 package com.loopers.infrastructure.payment.pg;
 
 import com.loopers.application.payment.port.PaymentGateway;
+import com.loopers.domain.payment.PaymentStatus;
+import feign.FeignException;
+import feign.Request;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
+import java.util.Collection;
 
 
 @Component
@@ -16,8 +21,8 @@ public class PgClientAdapter implements PaymentGateway {
     private final PgClient pgClient;
 
     @Override
-    @Retry(name = "pgClient")
-    @CircuitBreaker(name = "pgClient", fallbackMethod = "fallbackPayment")
+    @CircuitBreaker(name = "pgClient")
+    @Retry(name = "pgClient", fallbackMethod = "fallbackPayment")
     public Response request(Request request) {
         var pgRequest = new PgDto.Request(request.orderId(), request.cardType(), request.cardNo(), request.amount(), request.callbackUrl());
         log.info(">>> PG Request: {}", pgRequest);
@@ -25,6 +30,9 @@ public class PgClientAdapter implements PaymentGateway {
         log.info(">>> PG Raw Response: {}", pgResponse);
 
         if ("FAIL".equals(pgResponse.meta().result())) {
+            if ("Internal Server Error".equals(pgResponse.meta().errorCode())) {
+                throw new PgServerUnstableException(pgResponse.meta().message());
+            }
             return new Response(
                     request.orderId(),
                     null,
@@ -61,7 +69,7 @@ public class PgClientAdapter implements PaymentGateway {
         return new PaymentGateway.Response(
                 req.orderId(),
                 null,
-                "FAILED",
+                PaymentStatus.ERROR.name(),
                 "Fallback due to: " + t.getMessage());
     }
 }

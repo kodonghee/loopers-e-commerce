@@ -8,6 +8,7 @@ public record PaymentCallback(
         String status,
         String userId,
         BigDecimal amount,
-        Long couponId
+        Long couponId,
+        String reason
 ) { }
 

@@ -77,6 +77,7 @@ public class Point {
     }
 
     private void validateUseAmount(BigDecimal value) {
+
         if (value == null) {
             throw new IllegalArgumentException("사용할 포인트 값이 null입니다.");
         }

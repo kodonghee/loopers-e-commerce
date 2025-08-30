@@ -4,18 +4,18 @@ import com.loopers.domain.like.Like;
 import com.loopers.domain.like.LikeRepository;
 import com.loopers.domain.like.ProductLikeSummary;
 import com.loopers.domain.like.ProductLikeSummaryRepository;
-import com.loopers.domain.user.User;
+import com.loopers.domain.like.event.LikeCancelledEvent;
+import com.loopers.domain.like.event.LikeCreatedEvent;
 import com.loopers.domain.user.UserId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.script.ScriptEngine;
 import java.util.List;
 
 import static com.loopers.application.like.LikeMapper.toLike;
@@ -29,6 +29,7 @@ public class LikeFacade {
 
     private final LikeRepository likeRepository;
     private final ProductLikeSummaryRepository productLikeSummaryRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Caching(evict = {
             @CacheEvict(cacheNames = CACHE_PRODUCT_DETAIL, key = "#criteria.productId()", condition = "#result == true"),
@@ -43,16 +44,11 @@ public class LikeFacade {
 
         try {
             likeRepository.save(like);
+            eventPublisher.publishEvent(LikeCreatedEvent.of(like.getUserId(), like.getProductId()));
+            return true;
         } catch (DataIntegrityViolationException e) {
             return false;
         }
-
-        ProductLikeSummary summary = productLikeSummaryRepository.findByProductIdForUpdate(like.getProductId())
-                .orElseThrow(() -> new IllegalStateException("Summary row가 없습니다. 사전 생성 필요합니다."));
-
-        summary.increment();
-        productLikeSummaryRepository.save(summary);
-        return true;
     }
 
     @Caching(evict = {
@@ -69,11 +65,7 @@ public class LikeFacade {
             return false;
         }
 
-        ProductLikeSummary summary = productLikeSummaryRepository.findByProductIdForUpdate(productId)
-                .orElseThrow(() -> new IllegalStateException("Summary row가 없습니다. 사전 생성 필요합니다."));
-
-        summary.decrement();
-        productLikeSummaryRepository.save(summary);
+        eventPublisher.publishEvent(LikeCancelledEvent.of(userId.getUserId(), productId));
         return true;
     }
 
