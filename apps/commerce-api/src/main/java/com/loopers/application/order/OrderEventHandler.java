@@ -21,9 +21,11 @@ public class OrderEventHandler {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(PaymentCompletedEvent event) {
+        log.info("주문 {} → 결제 성공(PAID)", event.orderId());
         orderRepository.findByOrderId(event.orderId())
                 .ifPresent(order -> {
                     order.paid();
+                    orderRepository.save(order);
                     log.info("주문 {} → 결제 성공(PAID)", event.orderId());
                 });
     }
@@ -31,6 +33,7 @@ public class OrderEventHandler {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @EventListener
     public void handle(PaymentDeclinedEvent event) {
+        log.info("주문 {} → 결제 거절(PAYMENT_DECLINED), reason={}", event.orderId(), event.reason());
         orderRepository.findByOrderId(event.orderId())
                 .ifPresent(order -> {
                     order.declinePayment();
@@ -42,31 +45,33 @@ public class OrderEventHandler {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_ROLLBACK)
     public void handle(PaymentDeclinedRollbackEvent event) {
+        log.info("주문 {} → 결제 거절(PAYMENT_DECLINED), reason={}", event.orderId(), event.reason());
         orderRepository.findByOrderId(event.orderId())
                 .ifPresent(order -> {
                     order.declinePayment();
                     orderRepository.save(order);
-                    log.info("주문 {} → 결제 거절(PAYMENT_DECLINED), reason={}", event.orderId(), event.reason());
                 });
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @EventListener
     public void handle(PaymentErrorEvent event) {
+        log.warn("주문 {} → 결제 오류(PAYMENT_ERROR), reason={}", event.orderId(), event.reason());
         orderRepository.findByOrderId(event.orderId())
                 .ifPresent(order -> {
                     order.errorPayment();
-                    log.warn("주문 {} → 결제 오류(PAYMENT_ERROR), reason={}", event.orderId(), event.reason());
+                    orderRepository.save(order);
                 });
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_ROLLBACK)
     public void handle(PaymentErrorRollbackEvent event) {
+        log.warn("주문 {} → 결제 오류(PAYMENT_ERROR), reason={}", event.orderId(), event.reason());
         orderRepository.findByOrderId(event.orderId())
                 .ifPresent(order -> {
                     order.errorPayment();
-                    log.warn("주문 {} → 결제 오류(PAYMENT_ERROR), reason={}", event.orderId(), event.reason());
+                    orderRepository.save(order);
                 });
     }
 }

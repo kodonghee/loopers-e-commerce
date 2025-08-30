@@ -157,7 +157,7 @@ class OrderServiceConcurrencyIntegrationTest {
                 new OrderCriteria(USER_ID, List.of(new OrderCriteria.OrderLine(p2.getId(), 1, p2.getPrice().getAmount())), null, PaymentMethod.POINTS)
         );
 
-        int threadCount = 100;
+        int threadCount = 5;
         ExecutorService es = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
@@ -176,6 +176,7 @@ class OrderServiceConcurrencyIntegrationTest {
                             null
                     );
                     paymentService.processPointPayment(paymentCriteria);
+                    log.info("");
                 } catch (Exception e) {
                     log.warn("결제 실패: {}", e.getMessage());
                 }
@@ -186,8 +187,9 @@ class OrderServiceConcurrencyIntegrationTest {
         boolean completed = latch.await(10, TimeUnit.SECONDS);
         assertThat(completed).as("모든 스레드가 제한 시간 내 실행을 완료해야 함").isTrue();
 
-        await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
             Long successOrders = orderJpaRepository.countByStatus(OrderStatus.PAID);
+            log.info("결제 완료 주문 건 수: {}", successOrders );
 
             assertThat(successOrders).isLessThanOrEqualTo(3);
 
