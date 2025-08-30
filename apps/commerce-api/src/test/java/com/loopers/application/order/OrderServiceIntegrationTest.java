@@ -299,7 +299,7 @@ class OrderServiceIntegrationTest {
             Throwable thrown = catchThrowable(() -> paymentService.processPointPayment(paymentCriteria));
 
             // assert
-            assertThat(thrown).isInstanceOf(CoreException.class);
+            assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
             assertThat(productRepository.findById(product.getId()).get().getStock().getValue()).isEqualTo(5);
             assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())
                     .isEqualByComparingTo(new BigDecimal("300000"));
@@ -356,7 +356,7 @@ class OrderServiceIntegrationTest {
             Throwable thrown = catchThrowable(() -> paymentService.processPointPayment(secondPaymentCriteria));
 
             // assert
-            assertThat(thrown).isInstanceOf(IllegalStateException.class);
+            assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
             assertThat(couponRepository.findById(userCouponId).get().isUsed()).isTrue();
             assertThat(productRepository.findById(product.getId()).get().getStock().getValue()).isEqualTo(4);
             assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())

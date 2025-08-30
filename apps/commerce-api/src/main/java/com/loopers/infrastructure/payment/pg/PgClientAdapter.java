@@ -21,8 +21,8 @@ public class PgClientAdapter implements PaymentGateway {
     private final PgClient pgClient;
 
     @Override
-    @CircuitBreaker(name = "pgClient", fallbackMethod = "fallbackPayment")
-    @Retry(name = "pgClient")
+    @CircuitBreaker(name = "pgClient")
+    @Retry(name = "pgClient", fallbackMethod = "fallbackPayment")
     public Response request(Request request) {
         var pgRequest = new PgDto.Request(request.orderId(), request.cardType(), request.cardNo(), request.amount(), request.callbackUrl());
         log.info(">>> PG Request: {}", pgRequest);

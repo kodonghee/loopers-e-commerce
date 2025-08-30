@@ -7,14 +7,11 @@ import com.loopers.domain.order.*;
 import com.loopers.domain.payment.Payment;
 import com.loopers.domain.payment.PaymentRepository;
 import com.loopers.domain.payment.PaymentStatus;
-import com.loopers.domain.payment.event.PaymentCompletedEvent;
-import com.loopers.domain.payment.event.PaymentDeclinedEvent;
-import com.loopers.domain.payment.event.PaymentErrorEvent;
+import com.loopers.domain.payment.event.*;
 import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.infrastructure.payment.pg.PgServerUnstableException;
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -70,7 +67,17 @@ public class PaymentService {
 
             var result = gateway.request(req);
 
+            if ("FAILED".equals(result.status())) {
+                log.info(">>> DECLINED 이벤트 발행!");
+                payment.updateStatus(null, PaymentStatus.DECLINED, result.reason());
+                eventPublisher.publishEvent(
+                        PaymentDeclinedEvent.of(order.getOrderId(), order.getUserId(), result.reason())
+                );
+                return PaymentResult.declined(order.getOrderId());
+            }
+
             if ("ERROR".equals(result.status())) {
+                log.warn(">>> ERROR 이벤트 발행! reason={}", result.reason());
                 payment.updateStatus(null, PaymentStatus.ERROR, result.reason());
                 eventPublisher.publishEvent(
                         PaymentErrorEvent.of(order.getOrderId(), order.getUserId(), result.reason())
@@ -80,28 +87,22 @@ public class PaymentService {
 
             payment.markRequested(result.paymentId());
             return PaymentResult.pending(order.getOrderId(), result.paymentId());
-        } catch (FeignException.BadRequest e) {
-            payment.updateStatus(null, PaymentStatus.DECLINED, "잘못된 요청: " + e.getMessage()); // 결제 상태 변경
-            eventPublisher.publishEvent(
-                    PaymentDeclinedEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
-            );
-            throw e;
         } catch (PgServerUnstableException e) {
             payment.updateStatus(null, PaymentStatus.ERROR, "PG 서버 오류: " + e.getMessage());
             eventPublisher.publishEvent(
-                    PaymentErrorEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
+                    PaymentErrorRollbackEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
             );
             throw e;
         } catch (feign.RetryableException e) {
             payment.updateStatus(null, PaymentStatus.ERROR, "네트워크 오류: " + e.getMessage());
             eventPublisher.publishEvent(
-                    PaymentErrorEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
+                    PaymentErrorRollbackEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
             );
             throw e;
         } catch (Exception e) {
             payment.updateStatus(null, PaymentStatus.ERROR, "알 수 없는 오류: " + e.getMessage());
             eventPublisher.publishEvent(
-                    PaymentErrorEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
+                    PaymentErrorRollbackEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
             );
             throw e;
         }
@@ -112,14 +113,15 @@ public class PaymentService {
         Order order = orderRepository.findByOrderId(criteria.orderId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다."));
 
-        var coupon = criteria.couponId() != null
-                ? couponRepository.findById(criteria.couponId()).orElse(null)
-                : null;
-
         Payment payment = Payment.newForOrder(order.getOrderId(), order.getUserId(), order.getFinalAmount());
         paymentRepository.save(payment);
 
         try {
+            var coupon = criteria.couponId() != null
+                    ? couponRepository.findById(criteria.couponId())
+                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 쿠폰입니다."))
+                    : null;
+
             BigDecimal finalAmount = paymentProcessor.prepareForPayment(order, coupon);
 
             var point = pointRepository.findByUserIdForUpdate(criteria.userId())
@@ -144,13 +146,13 @@ public class PaymentService {
         } catch (IllegalArgumentException e) {
             payment.updateStatus(null, PaymentStatus.DECLINED, e.getMessage());
             eventPublisher.publishEvent(
-                    PaymentDeclinedEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
+                    PaymentDeclinedRollbackEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
             );
             throw e;
         } catch (Exception e) {
             payment.updateStatus(null, PaymentStatus.ERROR, "시스템 오류: " + e.getMessage());
             eventPublisher.publishEvent(
-                    PaymentErrorEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
+                    PaymentErrorRollbackEvent.of(order.getOrderId(), order.getUserId(), e.getMessage())
             );
             throw e;
         }
@@ -172,7 +174,7 @@ public class PaymentService {
         if (order.getFinalAmount().compareTo(callback.amount()) != 0) {
             payment.updateStatus(callback.paymentId(), PaymentStatus.ERROR, "금액 불일치");
             eventPublisher.publishEvent(
-                    PaymentErrorEvent.of(order.getOrderId(), order.getUserId(), "금액 불일치")
+                    PaymentErrorRollbackEvent.of(order.getOrderId(), order.getUserId(), "금액 불일치")
             );
             throw new IllegalStateException("결제 금액 불일치: 주문 금액=" + order.getFinalAmount() + ", PG 금액=" + callback.amount());
         }

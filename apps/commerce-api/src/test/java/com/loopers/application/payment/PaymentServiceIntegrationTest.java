@@ -3,11 +3,14 @@ package com.loopers.application.payment;
 import com.loopers.application.order.OrderCriteria;
 import com.loopers.application.order.OrderResult;
 import com.loopers.application.order.OrderService;
+import com.loopers.application.payment.port.PaymentGateway;
 import com.loopers.application.product.ProductCriteria;
 import com.loopers.application.product.ProductFacade;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.order.PaymentMethod;
+import com.loopers.domain.payment.Payment;
+import com.loopers.domain.payment.PaymentRepository;
 import com.loopers.domain.payment.PaymentStatus;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointRepository;
@@ -16,11 +19,10 @@ import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
+import com.loopers.infrastructure.order.OrderJpaRepository;
 import com.loopers.infrastructure.payment.pg.PgClient;
 import com.loopers.infrastructure.payment.pg.PgDto;
 import com.loopers.utils.DatabaseCleanUp;
-import feign.FeignException;
-import feign.Request;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,8 +33,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,8 +51,12 @@ class PaymentServiceIntegrationTest {
     @Autowired private OrderService orderService;
     @Autowired private UserRepository userRepository;
     @Autowired private PointRepository pointRepository;
+    @Autowired private PaymentRepository paymentRepository;
     @Autowired private BrandJpaRepository brandJpaRepository;
     @Autowired private DatabaseCleanUp databaseCleanUp;
+
+    @Autowired private OrderJpaRepository orderJpaRepository;
+
 
     @MockitoBean
     private PgClient pgClient;
@@ -95,8 +99,6 @@ class PaymentServiceIntegrationTest {
                 order.totalAmount(),
                 null
         );
-
-        paymentService.requestCardPayment(criteria);
         return criteria;
     }
 
@@ -125,45 +127,37 @@ class PaymentServiceIntegrationTest {
     void requestCardPayment_invalidCard_declined() {
         // Arrange
         PaymentCriteria criteria = createCardPaymentCriteria()
-                .withCardNo("0000-0000-0000-0000");
-
-        Request fakeRequest = Request.create(
-                Request.HttpMethod.POST,
-                "/api/v1/payments",
-                Collections.emptyMap(),
-                null,
-                StandardCharsets.UTF_8,
-                null
-        );
-
-        byte[] emptyBody = new byte[0];
-
-        FeignException.BadRequest badRequestEx =
-                new FeignException.BadRequest("잘못된 카드", fakeRequest, emptyBody, Collections.emptyMap());
+                .withCardNo("000-0000-0000-0000");
 
         given(pgClient.requestPayment(anyString(), any()))
-                .willThrow(badRequestEx);
+                .willReturn(new PgDto.ResponseWrapper(
+                        new PgDto.ResponseWrapper.Meta("FAIL", "Bad Request", "카드 번호는 xxxx-xxxx-xxxx-xxxx 형식이어야 합니다."),
+                        null
+                ));
 
-        // Act & Assert
-        assertThatThrownBy(() -> paymentService.requestCardPayment(criteria))
-                .isInstanceOf(FeignException.BadRequest.class);
+        // Act
+        PaymentResult result = paymentService.requestCardPayment(criteria);
+
+        // Assert
+        assertThat(result.status()).isEqualTo(PaymentStatus.DECLINED);
 
         var order = orderService.getOrderDetail(criteria.orderId());
         assertThat(order.status()).isEqualTo(OrderStatus.PAYMENT_DECLINED);
     }
 
     @Test
-    @DisplayName("PG 장애 발생 시 CircuitBreaker Fallback으로 ERROR 상태가 된다")
+    @DisplayName("PG 장애 발생 시 주문 상태가 ERROR로 변경된다")
     void requestCardPayment_fallback_error() {
         // Arrange
         PaymentCriteria criteria = createCardPaymentCriteria();
         given(pgClient.requestPayment(anyString(), any()))
                 .willThrow(new RuntimeException("PG 장애"));
 
-        // Act & Assert
-        assertThatThrownBy(() -> paymentService.requestCardPayment(criteria))
-                .isInstanceOf(RuntimeException.class);
+        // Act
+        PaymentResult result = paymentService.requestCardPayment(criteria);
 
+        // Assert
+        assertThat(result.status()).isEqualTo(PaymentStatus.ERROR);
         var order = orderService.getOrderDetail(criteria.orderId());
         assertThat(order.status()).isEqualTo(OrderStatus.PAYMENT_ERROR);
     }
@@ -173,6 +167,14 @@ class PaymentServiceIntegrationTest {
     void handlePgCallback_success() {
         // Arrange
         PaymentCriteria criteria = createCardPaymentCriteria();
+
+        Payment payment = Payment.newForOrder(
+                criteria.orderId(),
+                criteria.userId(),
+                criteria.amount()
+        );
+        paymentRepository.save(payment);
+
         PaymentCallback callback = new PaymentCallback(
                 criteria.orderId(),
                 "pgPaymentId-123",
@@ -196,6 +198,13 @@ class PaymentServiceIntegrationTest {
     void handlePgCallback_invalidAmount() {
         // Arrange
         PaymentCriteria criteria = createCardPaymentCriteria();
+        Payment payment = Payment.newForOrder(
+                criteria.orderId(),
+                criteria.userId(),
+                criteria.amount()
+        );
+        paymentRepository.save(payment);
+
         PaymentCallback callback = new PaymentCallback(
                 criteria.orderId(),
                 "pgPaymentId-123",

@@ -24,7 +24,10 @@ public class OrderPaymentProcessor {
     @Transactional
     public BigDecimal prepareForPayment(Order order, Coupon coupon) {
         BigDecimal amount = order.getFinalAmount();
-        if (coupon != null && !coupon.isUsed()) {
+        if (coupon != null) {
+            if (coupon.isUsed()) {
+                throw new IllegalArgumentException("이미 사용된 쿠폰입니다.");
+            }
             coupon.checkOwner(order.getUserId());
 
             BigDecimal discount = coupon.calculateDiscount(order.getFinalAmount());
