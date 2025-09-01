@@ -69,6 +69,25 @@ public class LikeFacade {
         return true;
     }
 
+    @Transactional
+    public void increaseLikeCounts(Long productId, String userId) {
+        productLikeSummaryRepository.findByProductIdForUpdate(productId)
+                .ifPresent(summary -> {
+                    summary.increment();
+                    productLikeSummaryRepository.save(summary);
+                    log.info("상품 {} 좋아요 수 +1 (userId={})", productId, userId);
+                });
+    }
+
+    @Transactional
+    public void decreaseLikeCounts(Long productId, String userId) {
+        productLikeSummaryRepository.findByProductIdForUpdate(productId)
+                .ifPresent(summary -> {
+                    summary.decrement();
+                    productLikeSummaryRepository.save(summary);
+                    log.info("상품 {} 좋아요 수 -1 (userId={})", productId, userId);
+                });
+    }
 
     @Transactional(readOnly = true)
     public List<LikeResult> getLikedProducts(UserId userId) {
