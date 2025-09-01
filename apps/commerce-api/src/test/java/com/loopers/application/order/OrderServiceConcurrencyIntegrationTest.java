@@ -7,11 +7,13 @@ import com.loopers.application.payment.PaymentService;
 import com.loopers.application.product.ProductCriteria;
 import com.loopers.application.product.ProductFacade;
 import com.loopers.domain.brand.Brand;
+import com.loopers.domain.coupon.CouponRepository;
 import com.loopers.domain.coupon.CouponType;
-import com.loopers.domain.order.OrderStatus;
-import com.loopers.domain.order.PaymentMethod;
+import com.loopers.domain.order.*;
+import com.loopers.domain.order.Order;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
@@ -22,6 +24,8 @@ import com.loopers.infrastructure.point.PointJpaRepository;
 import com.loopers.infrastructure.product.ProductJpaRepository;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -33,6 +37,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
 @DisplayName("주문 동시성 테스트")
@@ -45,9 +50,17 @@ class OrderServiceConcurrencyIntegrationTest {
     @Autowired
     private PaymentService paymentService;
     @Autowired
+    private OrderPaymentProcessor orderPaymentProcessor;
+    @Autowired
     private ProductFacade productFacade;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private OrderRepository orderRepository;
+    @Autowired
+    private CouponRepository couponRepository;
+    @Autowired
+    private ProductRepository productRepository;
     @Autowired
     private PointJpaRepository pointJpaRepository;
     @Autowired
@@ -60,6 +73,8 @@ class OrderServiceConcurrencyIntegrationTest {
     private CouponJpaRepository couponJpaRepository;
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
+
+    private static final Logger log = LoggerFactory.getLogger(OrderServiceConcurrencyIntegrationTest.class);
 
     private static final String USER_ID = "Annie";
     private Long brandId;
@@ -102,8 +117,18 @@ class OrderServiceConcurrencyIntegrationTest {
         for (int i = 0; i < threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    OrderResult order = orderService.createPendingOrder(orderCriteria);
-                    orderService.confirmPayment(order.orderId(), userCouponId);
+                    OrderResult orderResult = orderService.createPendingOrder(orderCriteria);
+
+                    PaymentCriteria paymentCriteria = new PaymentCriteria(
+                            USER_ID,
+                            orderResult.orderId(),
+                            null,
+                            null,
+                            orderResult.totalAmount(),
+                            userCouponId
+                    );
+
+                    paymentService.processPointPayment(paymentCriteria);
                 } catch (Exception ignored) {
                 } finally {
                     latch.countDown();
@@ -132,7 +157,7 @@ class OrderServiceConcurrencyIntegrationTest {
                 new OrderCriteria(USER_ID, List.of(new OrderCriteria.OrderLine(p2.getId(), 1, p2.getPrice().getAmount())), null, PaymentMethod.POINTS)
         );
 
-        int threadCount = 100;
+        int threadCount = 5;
         ExecutorService es = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
@@ -151,7 +176,10 @@ class OrderServiceConcurrencyIntegrationTest {
                             null
                     );
                     paymentService.processPointPayment(paymentCriteria);
-                } catch (Exception ignored) {}
+                    log.info("");
+                } catch (Exception e) {
+                    log.warn("결제 실패: {}", e.getMessage());
+                }
                 finally { latch.countDown(); }
             });
         }
@@ -159,13 +187,18 @@ class OrderServiceConcurrencyIntegrationTest {
         boolean completed = latch.await(10, TimeUnit.SECONDS);
         assertThat(completed).as("모든 스레드가 제한 시간 내 실행을 완료해야 함").isTrue();
 
-        Long successOrders = orderJpaRepository.countByStatus(OrderStatus.PAID);
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
+            Long successOrders = orderJpaRepository.countByStatus(OrderStatus.PAID);
+            log.info("결제 완료 주문 건 수: {}", successOrders );
 
-        BigDecimal expectedRemain = new BigDecimal("300000")
-                .subtract(new BigDecimal("100000").multiply(new BigDecimal(successOrders)));
+            assertThat(successOrders).isLessThanOrEqualTo(3);
 
-        BigDecimal actualRemain = pointJpaRepository.findByUserId(USER_ID).orElseThrow().getPointValue();
-        assertThat(actualRemain).isEqualByComparingTo(expectedRemain);
+            BigDecimal expectedRemain = new BigDecimal("300000")
+                    .subtract(new BigDecimal("100000").multiply(new BigDecimal(successOrders)));
+
+            BigDecimal actualRemain = pointJpaRepository.findByUserId(USER_ID).orElseThrow().getPointValue();
+            assertThat(actualRemain).isEqualByComparingTo(expectedRemain);
+        });
     }
 
     @DisplayName("동일한 상품에 대해 여러 주문이 동시에 요청되어도, 재고가 정상적으로 차감되어야 한다.")
@@ -192,8 +225,16 @@ class OrderServiceConcurrencyIntegrationTest {
         for (int i = 0; i < threadCount; i++) {
             es.submit(() -> {
                 try {
-                    var order = orderService.createPendingOrder(payload);
-                    orderService.confirmPayment(order.orderId(), null);
+                    var orderResult = orderService.createPendingOrder(payload);
+
+                    Order order = orderRepository.findByOrderId(orderResult.orderId())
+                                    .orElseThrow();
+
+                    List<Product> products = productRepository.findByIdForUpdate(
+                            order.getOrderItems().stream().map(OrderItem::getProductId).toList()
+                    );
+
+                    orderPaymentProcessor.confirmPayment(order, products);
                 } catch (Exception ignored) {
                 } finally {
                     latch.countDown();

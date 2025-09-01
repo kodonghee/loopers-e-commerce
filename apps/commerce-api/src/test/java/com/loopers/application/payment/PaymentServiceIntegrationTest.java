@@ -3,11 +3,15 @@ package com.loopers.application.payment;
 import com.loopers.application.order.OrderCriteria;
 import com.loopers.application.order.OrderResult;
 import com.loopers.application.order.OrderService;
+import com.loopers.application.payment.port.PaymentGateway;
 import com.loopers.application.product.ProductCriteria;
 import com.loopers.application.product.ProductFacade;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.order.PaymentMethod;
+import com.loopers.domain.payment.Payment;
+import com.loopers.domain.payment.PaymentRepository;
+import com.loopers.domain.payment.PaymentStatus;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.product.Product;
@@ -15,11 +19,15 @@ import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
+import com.loopers.infrastructure.order.OrderJpaRepository;
 import com.loopers.infrastructure.payment.pg.PgClient;
 import com.loopers.infrastructure.payment.pg.PgDto;
 import com.loopers.utils.DatabaseCleanUp;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -27,7 +35,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.math.BigDecimal;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
@@ -36,13 +45,18 @@ import static org.mockito.BDDMockito.given;
 @SpringBootTest
 class PaymentServiceIntegrationTest {
 
-    @Autowired private ProductFacade productFacade;
+    @Autowired
+    private ProductFacade productFacade;
     @Autowired private PaymentService paymentService;
     @Autowired private OrderService orderService;
     @Autowired private UserRepository userRepository;
     @Autowired private PointRepository pointRepository;
+    @Autowired private PaymentRepository paymentRepository;
     @Autowired private BrandJpaRepository brandJpaRepository;
     @Autowired private DatabaseCleanUp databaseCleanUp;
+
+    @Autowired private OrderJpaRepository orderJpaRepository;
+
 
     @MockitoBean
     private PgClient pgClient;
@@ -77,7 +91,7 @@ class PaymentServiceIntegrationTest {
         );
         OrderResult order = orderService.createPendingOrder(orderCriteria);
 
-        return new PaymentCriteria(
+        PaymentCriteria criteria = new PaymentCriteria(
                 USER_ID,
                 order.orderId(),
                 "SAMSUNG",
@@ -85,6 +99,7 @@ class PaymentServiceIntegrationTest {
                 order.totalAmount(),
                 null
         );
+        return criteria;
     }
 
     @Test
@@ -95,7 +110,7 @@ class PaymentServiceIntegrationTest {
         given(pgClient.requestPayment(anyString(), any()))
                 .willReturn(new PgDto.ResponseWrapper(
                         new PgDto.ResponseWrapper.Meta("SUCCESS", null, null),
-                        new PgDto.ResponseWrapper.Data("tx-123", "SUCCESS")
+                        new PgDto.ResponseWrapper.Data("tx-123", "PENDING")
                 ));
 
         // Act
@@ -103,16 +118,16 @@ class PaymentServiceIntegrationTest {
 
         // Assert
         assertThat(result.orderId()).isEqualTo(criteria.orderId());
-        assertThat(result.status()).isEqualTo("SUCCESS");
+        assertThat(result.status()).isEqualTo(PaymentStatus.PENDING); // 아직 콜백 전이므로 PENDING
         assertThat(result.paymentId()).isEqualTo("tx-123");
     }
 
     @Test
-    @DisplayName("PG 연동 API 호출 시 잘못된 카드 번호면 FAILED 상태를 반환한다")
-    void requestCardPayment_invalidCard_pending() {
+    @DisplayName("잘못된 카드 번호면 DECLINED 상태로 처리된다")
+    void requestCardPayment_invalidCard_declined() {
         // Arrange
         PaymentCriteria criteria = createCardPaymentCriteria()
-                .withCardNo("0000-0000-0000-0000");
+                .withCardNo("000-0000-0000-0000");
 
         given(pgClient.requestPayment(anyString(), any()))
                 .willReturn(new PgDto.ResponseWrapper(
@@ -123,15 +138,16 @@ class PaymentServiceIntegrationTest {
         // Act
         PaymentResult result = paymentService.requestCardPayment(criteria);
 
-        // Act & Assert
-        assertThat(result.status()).isEqualTo("FAILED");
-        assertThat(result.orderId()).isEqualTo(criteria.orderId());
-        assertThat(result.paymentId()).isNull();
+        // Assert
+        assertThat(result.status()).isEqualTo(PaymentStatus.DECLINED);
+
+        var order = orderService.getOrderDetail(criteria.orderId());
+        assertThat(order.status()).isEqualTo(OrderStatus.PAYMENT_DECLINED);
     }
 
     @Test
-    @DisplayName("PG 연동 장애 발생 시 CircuitBreaker Fallback으로 PENDING 상태를 반환한다")
-    void requestCardPayment_fallback() {
+    @DisplayName("PG 장애 발생 시 주문 상태가 ERROR로 변경된다")
+    void requestCardPayment_fallback_error() {
         // Arrange
         PaymentCriteria criteria = createCardPaymentCriteria();
         given(pgClient.requestPayment(anyString(), any()))
@@ -141,7 +157,9 @@ class PaymentServiceIntegrationTest {
         PaymentResult result = paymentService.requestCardPayment(criteria);
 
         // Assert
-        assertThat(result.status()).isEqualTo("FAILED");
+        assertThat(result.status()).isEqualTo(PaymentStatus.ERROR);
+        var order = orderService.getOrderDetail(criteria.orderId());
+        assertThat(order.status()).isEqualTo(OrderStatus.PAYMENT_ERROR);
     }
 
     @Test
@@ -149,13 +167,22 @@ class PaymentServiceIntegrationTest {
     void handlePgCallback_success() {
         // Arrange
         PaymentCriteria criteria = createCardPaymentCriteria();
+
+        Payment payment = Payment.newForOrder(
+                criteria.orderId(),
+                criteria.userId(),
+                criteria.amount()
+        );
+        paymentRepository.save(payment);
+
         PaymentCallback callback = new PaymentCallback(
                 criteria.orderId(),
                 "pgPaymentId-123",
                 "SUCCESS",
                 criteria.userId(),
                 criteria.amount(),
-                criteria.couponId()
+                criteria.couponId(),
+                "정상 승인되었습니다."
         );
 
         // Act
@@ -167,17 +194,25 @@ class PaymentServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("PG 콜백 금액이 다르면 결제 실패 처리된다")
+    @DisplayName("PG 콜백 금액이 다르면 DECLINED 처리된다")
     void handlePgCallback_invalidAmount() {
         // Arrange
         PaymentCriteria criteria = createCardPaymentCriteria();
+        Payment payment = Payment.newForOrder(
+                criteria.orderId(),
+                criteria.userId(),
+                criteria.amount()
+        );
+        paymentRepository.save(payment);
+
         PaymentCallback callback = new PaymentCallback(
                 criteria.orderId(),
                 "pgPaymentId-123",
                 "SUCCESS",
                 criteria.userId(),
                 criteria.amount().add(BigDecimal.TEN),
-                criteria.couponId()
+                criteria.couponId(),
+                "금액 불일치"
         );
 
         // Act & Assert
@@ -185,12 +220,12 @@ class PaymentServiceIntegrationTest {
                 .isInstanceOf(IllegalStateException.class);
 
         var order = orderService.getOrderDetail(criteria.orderId());
-        assertThat(order.status()).isEqualTo(OrderStatus.PAYMENT_FAILED);
+        assertThat(order.status()).isEqualTo(OrderStatus.PAYMENT_ERROR);
     }
 
     @Test
-    @DisplayName("콜백이 오지 않아도 상태 확인 API를 통해 결제 상태를 복구할 수 있다")
-    void recoverPaymentStatus_whenCallbackMissing() {
+    @DisplayName("콜백이 누락된 경우에도 상태 조회 API로 확인할 수 있다")
+    void checkPaymentStatus_whenCallbackMissing() {
         // Arrange
         PaymentCriteria criteria = createCardPaymentCriteria();
 
@@ -209,10 +244,10 @@ class PaymentServiceIntegrationTest {
                 ));
 
         // Act
-        PaymentResult recovered = paymentService.findByOrderId(criteria.userId(), criteria.orderId());
+        PaymentResult result = paymentService.findByOrderId(criteria.userId(), criteria.orderId());
 
         // Assert
-        assertThat(recovered.orderId()).isEqualTo(criteria.orderId());
-        assertThat(recovered.status()).isEqualTo("SUCCESS");
+        assertThat(result.orderId()).isEqualTo(criteria.orderId());
+        assertThat(result.status()).isEqualTo(PaymentStatus.SUCCESS);
     }
 }

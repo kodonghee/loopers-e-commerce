@@ -1,5 +1,6 @@
 package com.loopers.application.payment;
 
+import com.loopers.domain.payment.PaymentStatus;
 import com.loopers.infrastructure.payment.pg.PgDto;
 
 public class PaymentMapper {
@@ -10,6 +11,6 @@ public class PaymentMapper {
     }
 
     static PaymentResult toResult(String orderId, PgDto.Response response) {
-        return new PaymentResult(orderId, response.transactionKey(), response.status());
+        return new PaymentResult(orderId, response.transactionKey(), PaymentStatus.valueOf(response.status()));
     }
 }

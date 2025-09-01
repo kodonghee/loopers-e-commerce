@@ -18,6 +18,10 @@ public class PointRepositoryImpl implements PointRepository {
     public Optional<Point> find(UserId userId) {
         return pointJpaRepository.findByUserId(userId.getUserId());
     }
+    @Override
+    public Optional<Point> findByUserId(String userId) {
+        return pointJpaRepository.findByUserId(userId);
+    }
 
     @Override
     public Optional<Point> findByUserIdForUpdate(String userId) {

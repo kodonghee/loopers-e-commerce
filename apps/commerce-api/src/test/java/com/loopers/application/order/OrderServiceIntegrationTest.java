@@ -26,13 +26,14 @@ import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
 class OrderServiceIntegrationTest {
@@ -172,7 +173,10 @@ class OrderServiceIntegrationTest {
 
             // assert
             assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
-            assertThat(orderRepository.findByOrderId(order.orderId()).get().getStatus()).isEqualTo(OrderStatus.PAYMENT_FAILED);
+            await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+                OrderStatus status = orderRepository.findByOrderId(order.orderId()).get().getStatus();
+                assertThat(status).isEqualTo(OrderStatus.PAYMENT_DECLINED);
+            });
             assertThat(couponRepository.findById(userCouponId).get().isUsed()).isFalse();
             assertThat(productRepository.findById(product.getId()).get().getStock().getValue()).isEqualTo(1);
             assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())
@@ -216,7 +220,7 @@ class OrderServiceIntegrationTest {
                     .isEqualByComparingTo(new BigDecimal("300000"));
             assertThat(orderRepository.findAllByUserId(new UserId(USER_ID)))
                     .hasSize(1)
-                    .allSatisfy(o -> assertThat(o.getStatus()).isEqualTo(OrderStatus.PAYMENT_FAILED));
+                    .allSatisfy(o -> assertThat(o.getStatus()).isEqualTo(OrderStatus.PAYMENT_DECLINED));
         }
 
         @DisplayName("잘못된 쿠폰 사용 시, 전체 주문이 실패한다.")
@@ -261,7 +265,7 @@ class OrderServiceIntegrationTest {
             assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())
                     .isEqualByComparingTo(new BigDecimal("300000"));
             assertThat(orderRepository.findByOrderId(order.orderId()).get().getStatus())
-                    .isEqualTo(OrderStatus.PAYMENT_FAILED);
+                    .isEqualTo(OrderStatus.PAYMENT_DECLINED);
         }
 
         @DisplayName("존재하지 않는 쿠폰 사용 시, 전체 주문이 실패한다.")
@@ -295,12 +299,12 @@ class OrderServiceIntegrationTest {
             Throwable thrown = catchThrowable(() -> paymentService.processPointPayment(paymentCriteria));
 
             // assert
-            assertThat(thrown).isInstanceOf(CoreException.class);
+            assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
             assertThat(productRepository.findById(product.getId()).get().getStock().getValue()).isEqualTo(5);
             assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())
                     .isEqualByComparingTo(new BigDecimal("300000"));
             assertThat(orderRepository.findByOrderId(order.orderId()).get().getStatus())
-                    .isEqualTo(OrderStatus.PAYMENT_FAILED);
+                    .isEqualTo(OrderStatus.PAYMENT_DECLINED);
         }
 
         @DisplayName("이미 사용한 쿠폰을 사용할 경우, 전체 주문이 실패한다.")
@@ -352,14 +356,14 @@ class OrderServiceIntegrationTest {
             Throwable thrown = catchThrowable(() -> paymentService.processPointPayment(secondPaymentCriteria));
 
             // assert
-            assertThat(thrown).isInstanceOf(IllegalStateException.class);
+            assertThat(thrown).isInstanceOf(IllegalArgumentException.class);
             assertThat(couponRepository.findById(userCouponId).get().isUsed()).isTrue();
             assertThat(productRepository.findById(product.getId()).get().getStock().getValue()).isEqualTo(4);
             assertThat(pointRepository.find(new UserId(USER_ID)).get().getPointValue())
                     .isEqualByComparingTo(new BigDecimal("250000"));
             assertThat(orderRepository.findAllByUserId(new UserId(USER_ID)).size()).isEqualTo(2);
             assertThat(orderRepository.findByOrderId(secondOrder.orderId()).get().getStatus())
-                    .isEqualTo(OrderStatus.PAYMENT_FAILED);
+                    .isEqualTo(OrderStatus.PAYMENT_DECLINED);
         }
     }
 
