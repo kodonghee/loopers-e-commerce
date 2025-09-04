@@ -1,6 +1,6 @@
 package com.loopers.application.like;
 
-import com.loopers.domain.event.like.LikeChangedEvent;
+import com.loopers.application.event.MessagePublisher;
 import com.loopers.domain.like.Like;
 import com.loopers.domain.like.LikeRepository;
 import com.loopers.domain.like.ProductLikeSummary;
@@ -47,11 +47,6 @@ public class LikeFacade {
             likeRepository.save(like);
             eventPublisher.publishEvent(LikeCreatedEvent.of(like.getUserId(), like.getProductId()));
 
-            kafkaProducer.send(new LikeChangedEvent(
-                    like.getProductId(),
-                    like.getUserId(),
-                    true
-            ));
             return true;
         } catch (DataIntegrityViolationException e) {
             return false;
@@ -74,11 +69,6 @@ public class LikeFacade {
 
         eventPublisher.publishEvent(LikeCancelledEvent.of(userId.getUserId(), productId));
 
-        kafkaProducer.send(new LikeChangedEvent(
-                productId,
-                userId.getUserId(),
-                false
-        ));
         return true;
     }
 
