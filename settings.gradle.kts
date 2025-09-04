@@ -3,8 +3,10 @@ rootProject.name = "loopers-donghee"
 include(
     ":apps:commerce-api",
     ":apps:pg-simulator",
+    ":apps:commerce-collector",
     ":modules:jpa",
     ":modules:redis",
+    ":modules:kafka",
     ":supports:jackson",
     ":supports:logging",
     ":supports:monitoring",
@@ -32,3 +34,9 @@ pluginManagement {
 }
 include(":modules:redis")
 findProject(":modules:redis")?.name = "redis"
+include("modules:kafka")
+findProject(":modules:kafka")?.name = "kafka"
+include("modules:kafka")
+findProject(":modules:kafka")?.name = "kafka"
+include("apps:commerce-collector")
+findProject(":apps:commerce-collector")?.name = "commerce-collector"
