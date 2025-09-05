@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @RequiredArgsConstructor
 @Service
 public class CouponUseCase {
@@ -22,6 +24,15 @@ public class CouponUseCase {
 
         couponRepository.save(coupon);
         return coupon.getId();
+    }
+
+    @Transactional
+    public void use(Long couponId) {
+        Optional<Coupon> mayCoupon = couponRepository.findByIdForUpdate(couponId);
+        if(mayCoupon.isEmpty()){
+            return;
+        }
+        mayCoupon.get().markAsUsed();
     }
 
 }

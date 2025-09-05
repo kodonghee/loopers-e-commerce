@@ -23,6 +23,7 @@ spring:
       - redis.yml
       - logging.yml
       - monitoring.yml
+      - kafka.yml
 
   cloud:
     openfeign:
@@ -78,6 +79,10 @@ spring:
   config:
     activate:
       on-profile: local, test
+  kafka:
+    properties:
+      auto:
+        create.topics.enable: true
 
 management:
   server:

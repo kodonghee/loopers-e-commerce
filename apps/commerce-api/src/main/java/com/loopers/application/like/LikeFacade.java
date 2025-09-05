@@ -1,5 +1,6 @@
 package com.loopers.application.like;
 
+import com.loopers.application.event.MessagePublisher;
 import com.loopers.domain.like.Like;
 import com.loopers.domain.like.LikeRepository;
 import com.loopers.domain.like.ProductLikeSummary;
@@ -45,6 +46,7 @@ public class LikeFacade {
         try {
             likeRepository.save(like);
             eventPublisher.publishEvent(LikeCreatedEvent.of(like.getUserId(), like.getProductId()));
+
             return true;
         } catch (DataIntegrityViolationException e) {
             return false;
@@ -66,9 +68,29 @@ public class LikeFacade {
         }
 
         eventPublisher.publishEvent(LikeCancelledEvent.of(userId.getUserId(), productId));
+
         return true;
     }
 
+    @Transactional
+    public void increaseLikeCounts(Long productId, String userId) {
+        productLikeSummaryRepository.findByProductIdForUpdate(productId)
+                .ifPresent(summary -> {
+                    summary.increment();
+                    productLikeSummaryRepository.save(summary);
+                    log.info("상품 {} 좋아요 수 +1 (userId={})", productId, userId);
+                });
+    }
+
+    @Transactional
+    public void decreaseLikeCounts(Long productId, String userId) {
+        productLikeSummaryRepository.findByProductIdForUpdate(productId)
+                .ifPresent(summary -> {
+                    summary.decrement();
+                    productLikeSummaryRepository.save(summary);
+                    log.info("상품 {} 좋아요 수 -1 (userId={})", productId, userId);
+                });
+    }
 
     @Transactional(readOnly = true)
     public List<LikeResult> getLikedProducts(UserId userId) {

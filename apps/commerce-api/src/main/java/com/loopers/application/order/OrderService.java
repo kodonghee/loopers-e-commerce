@@ -77,4 +77,28 @@ public class OrderService {
         return orderRepository.findByOrderId(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다."));
     }
+
+    @Transactional
+    public Order pay(String orderId) {
+        Order order = orderRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다."));
+        order.paid();
+        return orderRepository.save(order);
+    }
+
+    @Transactional
+    public Order decline(String orderId) {
+        Order order = orderRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다."));
+        order.declinePayment();
+        return orderRepository.save(order);
+    }
+
+    @Transactional
+    public Order error(String orderId) {
+        Order order = orderRepository.findByOrderId(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 주문입니다."));
+        order.errorPayment();
+        return orderRepository.save(order);
+    }
 }
