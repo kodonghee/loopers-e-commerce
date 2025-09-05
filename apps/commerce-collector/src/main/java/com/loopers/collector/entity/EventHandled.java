@@ -13,9 +13,14 @@ import lombok.NoArgsConstructor;
 public class EventHandled {
 
     @Id
-    private String eventId;
+    private String id;
 
-    public EventHandled(String eventId) {
+    private String eventId;
+    private String consumer;
+
+    public EventHandled(String eventId, String consumer) {
+        this.id = eventId + ":" + consumer;
         this.eventId = eventId;
+        this.consumer = consumer;
     }
 }

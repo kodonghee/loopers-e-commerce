@@ -43,6 +43,10 @@ public class ProductMetrics {
 
     public void increaseLikes() { this.likeCount++; }
 
+    public void decreaseLikes() {
+        if (likeCount > 0) this.likeCount--;
+    }
+
     public void increaseSales() { this.salesCount++; }
 
     public void increaseViews() { this.viewCount++; }
