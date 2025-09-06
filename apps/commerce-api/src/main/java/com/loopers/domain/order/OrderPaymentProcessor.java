@@ -1,8 +1,10 @@
 package com.loopers.domain.order;
 
+import com.loopers.application.event.MessagePublisher;
 import com.loopers.domain.coupon.Coupon;
 import com.loopers.domain.coupon.CouponRepository;
 import com.loopers.domain.product.Product;
+import com.loopers.events.stock.StockAdjustedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 public class OrderPaymentProcessor {
 
     private final CouponRepository couponRepository;
+    private final MessagePublisher messagePublisher;
 
     /*
      * 결제 직전 최종 금액 계산
@@ -52,6 +55,8 @@ public class OrderPaymentProcessor {
                 throw new IllegalArgumentException("상품을 찾을 수 없습니다. id=" + item.getProductId());
             }
             product.decreaseStock(item.getQuantity());
+
+            messagePublisher.publish(new StockAdjustedEvent(product.getId(), product.getStock().getValue()));
         });
     }
 
