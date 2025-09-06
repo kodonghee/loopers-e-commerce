@@ -33,7 +33,6 @@ import static org.awaitility.Awaitility.await;
 @DirtiesContext // 테스트마다 context 초기화
 @EmbeddedKafka(
         partitions = 1,
-        topics = {"catalog-events"},
         brokerProperties = {"listeners=PLAINTEXT://localhost:19092", "port=19092"}
 )
 @Import(TestKafkaConfig.class)

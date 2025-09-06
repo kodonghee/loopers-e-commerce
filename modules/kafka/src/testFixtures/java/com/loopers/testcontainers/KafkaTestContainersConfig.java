@@ -23,9 +23,10 @@ public class KafkaTestContainersConfig {
 
         // 추가 Kafka 설정들
         System.setProperty("spring.kafka.producer.key-serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        System.setProperty("spring.kafka.producer.value-serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        System.setProperty("spring.kafka.producer.value-serializer", "org.springframework.kafka.support.serializer.JsonSerializer");
         System.setProperty("spring.kafka.consumer.key-deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        System.setProperty("spring.kafka.consumer.value-deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        System.setProperty("spring.kafka.consumer.value-deserializer", "org.springframework.kafka.support.serializer.JsonDeserializer");
+        System.setProperty("spring.kafka.consumer.properties.spring.json.trusted.packages", "*");
         System.setProperty("spring.kafka.consumer.auto-offset-reset", "earliest");
         System.setProperty("spring.kafka.consumer.group-id", "test-group");
     }
