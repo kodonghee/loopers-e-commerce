@@ -35,6 +35,8 @@ spring:
     activate:
       on-profile: local, test
   kafka:
+    listener:
+      ack-mode: manual
     properties:
       auto:
         create.topics.enable: true

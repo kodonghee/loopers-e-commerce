@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
@@ -25,7 +24,6 @@ public class LikeChangedEventConsumer {
 
     private static final String CONSUMER_NAME = "log";
 
-    @Transactional
     @KafkaListener(
             topics = "catalog-events",
             groupId = "catalog-consumer",
@@ -47,9 +45,9 @@ public class LikeChangedEventConsumer {
                     payload,
                     event.occurredAt()
             );
-            eventLogRepository.save(logEntry);
+            eventLogRepository.saveAndFlush(logEntry);
 
-            eventHandledRepository.save(new EventHandled(event.eventId(), CONSUMER_NAME));
+            eventHandledRepository.saveAndFlush(new EventHandled(event.eventId(), CONSUMER_NAME));
 
             log.info("Consumed and processed LikeChangedEvent: {}", event);
             ack.acknowledge();

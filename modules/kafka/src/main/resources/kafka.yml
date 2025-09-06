@@ -3,7 +3,7 @@ spring:
     bootstrap-servers: ${BOOTSTRAP_SERVERS}
     client-id: ${spring.application.name}
     properties:
-      spring.json.add.type.headers: false # json serialize off
+      spring.json.add.type.headers: true # json serialize off
       request.timeout.ms: 20000
       retry.backoff.ms: 500
       auto:

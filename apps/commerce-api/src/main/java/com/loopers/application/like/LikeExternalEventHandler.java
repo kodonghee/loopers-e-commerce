@@ -19,19 +19,15 @@ public class LikeExternalEventHandler {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(LikeCreatedEvent event) {
-        messagePublisher.publish(new LikeChangedEvent(
-                event.productId(),
-                event.userId(),
-                true
-        ));
+        messagePublisher.publish(
+                LikeChangedEvent.of(event.productId(), event.userId(), true)
+        );
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(LikeCancelledEvent event) {
-        messagePublisher.publish(new LikeChangedEvent(
-                event.productId(),
-                event.userId(),
-                false
-        ));
+        messagePublisher.publish(
+                LikeChangedEvent.of(event.productId(), event.userId(), true)
+        );
     }
 }

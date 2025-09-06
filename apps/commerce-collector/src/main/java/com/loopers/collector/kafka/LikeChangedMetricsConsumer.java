@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
@@ -24,7 +23,6 @@ public class LikeChangedMetricsConsumer {
 
     private static final String CONSUMER_NAME = "metrics";
 
-    @Transactional
     @KafkaListener(
             topics = "catalog-events",
             groupId = "catalog-metrics-consumer",
@@ -50,8 +48,8 @@ public class LikeChangedMetricsConsumer {
                 metrics.decreaseLikes();
             }
 
-            productMetricsRepository.save(metrics);
-            eventHandledRepository.save(new EventHandled(event.eventId(), CONSUMER_NAME));
+            productMetricsRepository.saveAndFlush(metrics);
+            eventHandledRepository.saveAndFlush(new EventHandled(event.eventId(), CONSUMER_NAME));
 
             log.info("Updated metrics for productId={}, date={}, likeCount={}",
                     event.productId(), today, metrics.getLikeCount());

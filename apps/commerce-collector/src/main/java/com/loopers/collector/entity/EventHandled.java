@@ -2,6 +2,7 @@ package com.loopers.collector.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,8 +20,15 @@ public class EventHandled {
     private String consumer;
 
     public EventHandled(String eventId, String consumer) {
-        this.id = eventId + ":" + consumer;
         this.eventId = eventId;
         this.consumer = consumer;
+        this.id = eventId + ":" + consumer;
+    }
+
+    @PrePersist
+    void prePersist() {
+        if (this.id == null) {
+            this.id = eventId + ":" + consumer;
+        }
     }
 }
