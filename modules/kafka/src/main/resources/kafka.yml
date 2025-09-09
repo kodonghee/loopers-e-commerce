@@ -1,0 +1,48 @@
+spring:
+  kafka:
+    bootstrap-servers: ${BOOTSTRAP_SERVERS}
+    client-id: ${spring.application.name}
+    properties:
+      spring.json.add.type.headers: true # json serialize off
+      request.timeout.ms: 20000
+      retry.backoff.ms: 500
+      auto:
+        create.topics.enable: false
+        register.schemas: false
+        offset.reset: latest
+      use.latest.version: true
+    producer:
+      acks: all
+      retries: 3
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+    consumer:
+      group-id: loopers-default-consumer
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        enable-auto-commit: false
+        spring.json.trusted.packages: "*"
+    listener:
+      ack-mode: manual
+
+---
+spring.config.activate.on-profile: local, test
+
+spring:
+  kafka:
+    bootstrap-servers: localhost:19092
+    admin:
+      properties:
+        bootstrap.servers: kafka:9092
+
+---
+spring.config.activate.on-profile: dev
+
+---
+spring.config.activate.on-profile: qa
+
+---
+spring.config.activate.on-profile: prd
