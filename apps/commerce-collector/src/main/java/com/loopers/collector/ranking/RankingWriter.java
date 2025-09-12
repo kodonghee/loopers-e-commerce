@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 @Repository
 @RequiredArgsConstructor
-public class RankingRepository {
+public class RankingWriter {
 
     private final StringRedisTemplate redisTemplate;
 

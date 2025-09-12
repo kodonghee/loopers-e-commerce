@@ -14,14 +14,14 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 public class RankingConsumer {
 
-    private final RankingRepository rankingRepository;
+    private final RankingWriter rankingWriter;
 
     @KafkaListener(topics = "like-events", groupId = "ranking-consumer")
     public void consumeLikeChanged(LikeChangedEvent event) {
         log.info("Consume LikeChangedEvent: {}", event);
 
         double score = RankingScore.fromLike();
-        rankingRepository.incrementScore(
+        rankingWriter.incrementScore(
                 LocalDate.now(),
                 event.productId().toString(),
                 score
@@ -34,7 +34,7 @@ public class RankingConsumer {
 
         event.items().forEach(item -> {
             double score = RankingScore.fromOrder(item.price(), item.quantity());
-            rankingRepository.incrementScore(
+            rankingWriter.incrementScore(
                     LocalDate.now(),
                     item.productId().toString(),
                     score

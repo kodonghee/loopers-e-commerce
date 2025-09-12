@@ -82,7 +82,7 @@ class LikeChangedEventConsumerTest {
                 .pollInterval(500, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> {
                     assertThat(eventHandledRepository.findById(handledId)).isPresent();
-                    assertThat(eventHandledRepository.count()).isEqualTo(2);
+                    assertThat(eventHandledRepository.count()).isEqualTo(3);
 
                     EventLog logEntry = eventLogRepository.findByEventId(eventId)
                             .orElseThrow();

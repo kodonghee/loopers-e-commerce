@@ -15,8 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
-import static com.loopers.config.redis.RedisCacheConfig.CACHE_PRODUCT_LIST;
-
 @RequiredArgsConstructor
 @Service
 public class ProductFacade {

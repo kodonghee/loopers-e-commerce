@@ -9,24 +9,12 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 @Repository
 @RequiredArgsConstructor
 public class RankingRedisRepository implements RankingRepository {
 
     private final StringRedisTemplate redisTemplate;
-
-    @Override
-    public void incrementScore(LocalDate date, String productId, double score) {
-        String key = RankingKeyGenerator.dailyKey(date);
-
-        redisTemplate.opsForZSet().incrementScore(key, productId, score);
-
-        if (Boolean.FALSE.equals(redisTemplate.hasKey(key))) {
-            redisTemplate.expire(key, RankingKeyGenerator.ttlSeconds(), TimeUnit.SECONDS);
-        }
-    }
 
     @Override
     public List<String> getTopProducts(LocalDate date, int start, int end) {
