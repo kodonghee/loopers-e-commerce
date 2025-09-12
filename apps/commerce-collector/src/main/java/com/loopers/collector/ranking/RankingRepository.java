@@ -1,6 +1,6 @@
 package com.loopers.collector.ranking;
 
-
+import com.loopers.support.ranking.RankingKeyGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Repository;

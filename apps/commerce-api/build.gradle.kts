@@ -4,6 +4,7 @@ dependencies {
     implementation(project(":modules:redis"))
     implementation(project(":modules:kafka"))
     implementation(project(":modules:common-events"))
+    implementation(project(":modules:common-support"))
     implementation(project(":supports:jackson"))
     implementation(project(":supports:logging"))
     implementation(project(":supports:monitoring"))

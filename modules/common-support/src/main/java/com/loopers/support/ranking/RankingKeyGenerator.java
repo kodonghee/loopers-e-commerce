@@ -1,4 +1,4 @@
-package com.loopers.collector.ranking;
+package com.loopers.support.ranking;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;

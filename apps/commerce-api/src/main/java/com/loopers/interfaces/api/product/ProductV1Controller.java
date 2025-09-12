@@ -19,7 +19,7 @@ public class ProductV1Controller implements ProductV1ApiSpec {
 
     @GetMapping
     @Override
-    public ApiResponse<List<ProductV1Dto.ProductResponse>> getProductList(
+    public ApiResponse<List<ProductV1Dto.ProductListResponse>> getProductList(
             @RequestParam(required = false) Long brandId,
             @RequestParam(defaultValue = "LATEST") ProductSearchCondition.ProductSortType sortType,
             @RequestParam(defaultValue = "0") int page,
@@ -29,8 +29,8 @@ public class ProductV1Controller implements ProductV1ApiSpec {
                 brandId, sortType, page, size
         );
         List<ProductResult> products = productFacade.getProductList(condition);
-        List<ProductV1Dto.ProductResponse> response = products.stream()
-                .map(ProductV1Dto.ProductResponse::from)
+        List<ProductV1Dto.ProductListResponse> response = products.stream()
+                .map(ProductV1Dto.ProductListResponse::from)
                 .toList();
 
         return ApiResponse.success(response);
@@ -38,12 +38,12 @@ public class ProductV1Controller implements ProductV1ApiSpec {
 
     @GetMapping("/{productId}")
     @Override
-    public ApiResponse<ProductV1Dto.ProductResponse> getProductDetail(
+    public ApiResponse<ProductV1Dto.ProductDetailResponse> getProductDetail(
             @Parameter(description = "상품 ID", example = "1")
             @PathVariable("productId") Long productId
     ) {
         ProductResult product = productFacade.getProductDetail(productId);
-        return ApiResponse.success(ProductV1Dto.ProductResponse.from(product));
+        return ApiResponse.success(ProductV1Dto.ProductDetailResponse.from(product));
     }
 
 }
