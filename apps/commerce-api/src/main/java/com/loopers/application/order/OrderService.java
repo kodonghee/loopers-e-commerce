@@ -55,7 +55,7 @@ public class OrderService {
                 order.getOrderId(),
                 order.getUserId(),
                 order.getTotalAmount(),
-                productIds
+                order.getOrderItems()
         ));
         return OrderMapper.fromOrder(order);
     }

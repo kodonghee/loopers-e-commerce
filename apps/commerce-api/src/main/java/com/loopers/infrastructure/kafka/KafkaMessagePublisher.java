@@ -2,6 +2,7 @@ package com.loopers.infrastructure.kafka;
 
 import com.loopers.application.event.MessagePublisher;
 import com.loopers.events.like.LikeChangedEvent;
+import com.loopers.events.order.OrderPlacedEvent;
 import com.loopers.events.stock.StockAdjustedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,8 @@ public class KafkaMessagePublisher implements MessagePublisher {
             return "like-events";
         } else if (event instanceof StockAdjustedEvent) {
             return "stock-events";
+        } else if (event instanceof OrderPlacedEvent) {
+            return "order-events";
         }
 
         // TODO: 다른 이벤트 매핑 필요 시 추가
@@ -41,6 +44,9 @@ public class KafkaMessagePublisher implements MessagePublisher {
         }
         if (event instanceof StockAdjustedEvent stockEvent) {
             return String.valueOf(stockEvent.productId());
+        }
+        if (event instanceof OrderPlacedEvent orderEvent) {
+            return orderEvent.orderId();
         }
         return null;
     }
