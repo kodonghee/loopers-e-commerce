@@ -25,12 +25,14 @@ public class KafkaMessagePublisher implements MessagePublisher {
     }
 
     private String resolveTopic(Object event) {
-        if (event instanceof LikeChangedEvent || event instanceof StockAdjustedEvent) {
-            return "catalog-events";
+        if (event instanceof LikeChangedEvent) {
+            return "like-events";
+        } else if (event instanceof StockAdjustedEvent) {
+            return "stock-events";
         }
 
         // TODO: 다른 이벤트 매핑 필요 시 추가
-        throw new IllegalArgumentException("Unknown event type: " + event.getClass().getName());
+        throw new IllegalArgumentException("Unknown event type: " + event.getClass());
     }
 
     private Object resolveKey(Object event) {

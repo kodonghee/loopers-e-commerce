@@ -24,8 +24,8 @@ public class LikeChangedMetricsConsumer {
     private static final String CONSUMER_NAME = "metrics";
 
     @KafkaListener(
-            topics = "catalog-events",
-            groupId = "catalog-metrics-consumer",
+            topics = "like-events",
+            groupId = "like-metrics-consumer",
             containerFactory = "kafkaListenerContainerFactory"
     )
     public void handle(LikeChangedEvent event, Acknowledgment ack) {
