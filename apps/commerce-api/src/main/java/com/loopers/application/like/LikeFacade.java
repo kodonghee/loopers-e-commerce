@@ -32,10 +32,6 @@ public class LikeFacade {
     private final ProductLikeSummaryRepository productLikeSummaryRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-    @Caching(evict = {
-            @CacheEvict(cacheNames = CACHE_PRODUCT_DETAIL, key = "#criteria.productId()", condition = "#result == true"),
-            @CacheEvict(cacheNames = CACHE_PRODUCT_LIST,   allEntries = true,           condition = "#result == true")
-    })
     @Transactional(rollbackFor = Exception.class)
     public boolean likeProduct(LikeCriteria criteria) {
         Like like = toLike(criteria);
@@ -53,10 +49,6 @@ public class LikeFacade {
         }
     }
 
-    @Caching(evict = {
-            @CacheEvict(cacheNames = CACHE_PRODUCT_DETAIL, key = "#criteria.productId()", condition = "#result == true"),
-            @CacheEvict(cacheNames = CACHE_PRODUCT_LIST,   allEntries = true,           condition = "#result == true")
-    })
     @Transactional(rollbackFor = Exception.class)
     public boolean cancelLikeProduct(LikeCriteria criteria) {
         UserId userId = new UserId(criteria.userId());

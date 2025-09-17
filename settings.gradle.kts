@@ -8,6 +8,7 @@ include(
     ":modules:redis",
     ":modules:kafka",
     ":modules:common-events",
+    ":modules:common-support",
     ":supports:jackson",
     ":supports:logging",
     ":supports:monitoring",
@@ -43,3 +44,5 @@ include("apps:commerce-collector")
 findProject(":apps:commerce-collector")?.name = "commerce-collector"
 include("modules:common-events")
 findProject(":modules:common-events")?.name = "common-events"
+include("modules:common-support")
+findProject(":modules:common-support")?.name = "common-support"

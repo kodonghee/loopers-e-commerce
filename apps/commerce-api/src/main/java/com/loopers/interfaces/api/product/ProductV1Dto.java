@@ -6,7 +6,7 @@ import com.loopers.domain.product.ProductSearchCondition;
 import java.math.BigDecimal;
 
 public class ProductV1Dto {
-    public record ProductResponse(
+    public record ProductListResponse(
             Long productId,
             String name,
             Integer stock,
@@ -14,14 +14,36 @@ public class ProductV1Dto {
             String brandName,
             Long likeCount
     ) {
-        public static ProductResponse from(ProductResult info) {
-            return new ProductResponse(
+        public static ProductListResponse from(ProductResult info) {
+            return new ProductListResponse(
                     info.productId(),
                     info.name(),
                     info.stock(),
                     info.price(),
                     info.brandName(),
                     info.likeCount()
+            );
+        }
+    }
+
+    public record ProductDetailResponse(
+            Long productId,
+            String name,
+            Integer stock,
+            BigDecimal price,
+            String brandName,
+            Long likeCount,
+            Long rank
+    ) {
+        public static ProductDetailResponse from(ProductResult info) {
+            return new ProductDetailResponse(
+                    info.productId(),
+                    info.name(),
+                    info.stock(),
+                    info.price(),
+                    info.brandName(),
+                    info.likeCount(),
+                    info.rank()
             );
         }
     }

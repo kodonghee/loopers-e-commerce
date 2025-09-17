@@ -5,21 +5,22 @@ import com.loopers.domain.brand.BrandReader;
 import com.loopers.domain.like.ProductLikeSummary;
 import com.loopers.domain.like.ProductLikeSummaryRepository;
 import com.loopers.domain.product.*;
+import com.loopers.domain.ranking.RankingRepository;
 import com.loopers.infrastructure.product.ProductListCache;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
-
-import static com.loopers.config.redis.RedisCacheConfig.CACHE_PRODUCT_LIST;
 
 @RequiredArgsConstructor
 @Service
 public class ProductFacade {
 
     private final ProductRepository productRepository;
+    private final RankingRepository rankingRepository;
     private final BrandReader brandReader;
     private final ProductLikeSummaryRepository productLikeSummaryRepository;
     private final ProductListCache productListCache;
@@ -64,6 +65,9 @@ public class ProductFacade {
         Long likeCount = productLikeSummaryRepository.findByProductId(productId)
                 .map(ProductLikeSummary::getLikeCount)
                 .orElse(0L);
-        return ProductMapper.fromProduct(product, brandName, likeCount);
+
+        Long rank = rankingRepository.getRank(LocalDate.now(), productId.toString());
+
+        return ProductMapper.fromProduct(product, brandName, likeCount, rank);
     }
 }

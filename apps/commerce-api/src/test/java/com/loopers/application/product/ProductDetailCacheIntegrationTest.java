@@ -16,8 +16,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -71,33 +73,6 @@ class ProductDetailCacheIntegrationTest {
         assertThat(redisTemplate.hasKey(key)).isTrue();
         Long ttlSec = redisTemplate.getExpire(key);
         assertThat(ttlSec).isNotNull().isGreaterThan(0L);
-    }
-
-    @Test
-    @DisplayName("좋아요 성공 시 상세 캐시가 무효화 되고, 다시 조회 하면 최신 값으로 재적재된다")
-    void like_success_evicts_detail_cache_and_repopulates() {
-        // arrange
-        Product saved = productFacade.create(new ProductCriteria("shoes", 10, new BigDecimal("10000"), brandId));
-        Long id = saved.getId();
-
-        // 초기 상세 호출 → 캐시 적재
-        ProductResult before = productFacade.getProductDetail(id);
-        String key = RedisCacheConfig.CACHE_PRODUCT_DETAIL + "::" + id;
-        assertThat(redisTemplate.hasKey(key)).isTrue();
-
-        // act: 좋아요 성공 (LikeFacade는 true 반환 시 @CacheEvict 조건 만족)
-        boolean changed = likeFacade.likeProduct(new LikeCriteria("user-1", id));
-        assertThat(changed).isTrue();
-
-        // then: 캐시가 지워 졌는지 확인(키 없음 또는 TTL == -2)
-        Long ttlAfterEvict = redisTemplate.getExpire(key);
-        assertThat(ttlAfterEvict == null || ttlAfterEvict == -2).isTrue();
-
-        // 재조회 → 캐시 재적재 + likeCount 증가 반영
-        ProductResult after = productFacade.getProductDetail(id);
-        assertThat(after.likeCount()).isEqualTo(before.likeCount() + 1);
-        assertThat(redisTemplate.hasKey(key)).isTrue();
-        assertThat(redisTemplate.getExpire(key)).isGreaterThan(0L);
     }
 
     @Test

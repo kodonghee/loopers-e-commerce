@@ -74,15 +74,15 @@ class LikeChangedEventConsumerTest {
         );
 
         // 동일 이벤트 두 번 발행
-        kafkaTemplate.send("catalog-events", String.valueOf(event.productId()), event).get(5, TimeUnit.SECONDS);
-        kafkaTemplate.send("catalog-events", String.valueOf(event.productId()), event).get(5, TimeUnit.SECONDS);
+        kafkaTemplate.send("like-events", String.valueOf(event.productId()), event).get(5, TimeUnit.SECONDS);
+        kafkaTemplate.send("like-events", String.valueOf(event.productId()), event).get(5, TimeUnit.SECONDS);
 
         await()
                 .atMost(5, TimeUnit.SECONDS)
                 .pollInterval(500, TimeUnit.MILLISECONDS)
                 .untilAsserted(() -> {
                     assertThat(eventHandledRepository.findById(handledId)).isPresent();
-                    assertThat(eventHandledRepository.count()).isEqualTo(2);
+                    assertThat(eventHandledRepository.count()).isEqualTo(3);
 
                     EventLog logEntry = eventLogRepository.findByEventId(eventId)
                             .orElseThrow();

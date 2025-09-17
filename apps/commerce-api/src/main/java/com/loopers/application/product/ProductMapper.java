@@ -19,6 +19,18 @@ public class ProductMapper {
                 likeCount);
     }
 
+    public static ProductResult fromProduct(Product product, String brandName, Long likeCount, Long rank) {
+        return new ProductResult(
+                product.getId(),
+                product.getName(),
+                product.getStock().getValue(),
+                product.getPrice().getAmount(),
+                brandName,
+                likeCount,
+                rank
+        );
+    }
+
     public static ProductResult from(ProductListView v) {
         return new ProductResult(
                 v.getId(),
