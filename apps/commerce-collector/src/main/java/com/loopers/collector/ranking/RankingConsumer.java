@@ -2,6 +2,7 @@ package com.loopers.collector.ranking;
 
 import com.loopers.events.like.LikeChangedEvent;
 import com.loopers.events.order.OrderPlacedEvent;
+import com.loopers.events.view.ProductViewedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -33,12 +34,24 @@ public class RankingConsumer {
         log.info("Consume OrderPlacedEvent: {}", event);
 
         event.items().forEach(item -> {
-            double score = RankingScore.fromOrder(item.price(), item.quantity());
+            double score = RankingScore.fromOrder(item.quantity());
             rankingWriter.incrementScore(
                     LocalDate.now(),
                     item.productId().toString(),
                     score
             );
         });
+    }
+
+    @KafkaListener(topics = "view-events", groupId = "ranking-consumer")
+    public void consumeProductViewed(ProductViewedEvent event) {
+        log.debug("Consume ProductViewedEvent: {}", event);
+
+        double score = RankingScore.fromView();
+        rankingWriter.incrementScore(
+                LocalDate.now(),
+                event.productId().toString(),
+                score
+        );
     }
 }

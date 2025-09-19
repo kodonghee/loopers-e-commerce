@@ -17,9 +17,10 @@ public class RankingWriter {
     public void incrementScore(LocalDate date, String productId, double score) {
         String key = RankingKeyGenerator.dailyKey(date);
 
+        Boolean isNewKey = redisTemplate.hasKey(key);
         redisTemplate.opsForZSet().incrementScore(key, productId, score);
 
-        if (Boolean.FALSE.equals(redisTemplate.hasKey(key))) {
+        if (Boolean.FALSE.equals(isNewKey)) {
             redisTemplate.expire(key, RankingKeyGenerator.ttlSeconds(), TimeUnit.SECONDS);
         }
     }
