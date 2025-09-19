@@ -1,6 +1,6 @@
 package com.loopers.batch.reader;
 
-import com.loopers.batch.entity.AggregatedRanking;
+import com.loopers.collector.entity.ProductMetrics;
 import jakarta.persistence.EntityManagerFactory;
 import org.springframework.batch.item.database.JpaPagingItemReader;
 import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
@@ -20,30 +20,16 @@ public class WeeklyMetricsReader {
     }
 
     @Bean
-    public JpaPagingItemReader<AggregatedRanking> weeklyRankingItemReader() {
+    public JpaPagingItemReader<ProductMetrics> weeklyMetricsItemReader() {
         LocalDate today = LocalDate.now();
         LocalDate sevenDaysAgo = today.minusDays(6);
 
-        return new JpaPagingItemReaderBuilder<AggregatedRanking>()
-                .name("weeklyRankingItemReader")
+        return new JpaPagingItemReaderBuilder<ProductMetrics>()
+                .name("weeklyMetricsItemReader")
                 .entityManagerFactory(entityManagerFactory)
                 .pageSize(100)
-                .queryString("""
-                SELECT new com.loopers.batch.entity.AggregatedRanking(
-                    m.productId,
-                    SUM(m.likeCount),
-                    SUM(m.orderCount),
-                    SUM(m.orderQuantity),
-                    SUM(m.viewCount)
-                )
-                FROM ProductMetrics m
-                WHERE m.date BETWEEN :start AND :end
-                GROUP BY m.productId
-            """)
-                .parameterValues(Map.of(
-                        "start", sevenDaysAgo,
-                        "end", today
-                ))
+                .queryString("SELECT m FROM ProductMetrics m WHERE m.date BETWEEN :start AND :end")
+                .parameterValues(Map.of("start", sevenDaysAgo, "end", today))
                 .build();
     }
 }
