@@ -4,14 +4,20 @@ import java.math.BigDecimal;
 
 public class RankingScore {
 
-    private static final double LIKE_WEIGHT = 0.3;
-    private static final double ORDER_WEIGHT = 0.7;
+    private static final double LIKE_WEIGHT = 1.0;
+    private static final double ORDER_COUNT_WEIGHT = 2.0;
+    private static final double ORDER_QUANTITY_WEIGHT = 0.5;
+    private static final double VIEW_WEIGHT = 0.2;
 
     public static double fromLike() {
-        return LIKE_WEIGHT * 1;
+        return LIKE_WEIGHT;
     }
 
-    public static double fromOrder(BigDecimal price, int amount) {
-        return ORDER_WEIGHT * price.multiply(BigDecimal.valueOf(amount)).doubleValue();
+    public static double fromOrder(int quantity) {
+        return ORDER_COUNT_WEIGHT + ORDER_QUANTITY_WEIGHT * quantity;
+    }
+
+    public static double fromView() {
+        return VIEW_WEIGHT;
     }
 }
