@@ -28,17 +28,24 @@ public class ProductMetrics {
     private LocalDate date;
 
     @Column(nullable = false)
-    private long likeCount = 0;
+    private long likeCount;
 
     @Column(nullable = false)
-    private long salesCount = 0;
+    private long orderCount;
 
     @Column(nullable = false)
-    private long viewCount = 0;
+    private long orderQuantity;
+
+    @Column(nullable = false)
+    private long viewCount;
 
     public ProductMetrics(Long productId, LocalDate date) {
         this.productId = productId;
         this.date = date;
+        this.likeCount = 0L;
+        this.orderCount = 0L;
+        this.orderQuantity = 0L;
+        this.viewCount = 0L;
     }
 
     public void increaseLikes() { this.likeCount++; }
@@ -47,7 +54,10 @@ public class ProductMetrics {
         if (likeCount > 0) this.likeCount--;
     }
 
-    public void increaseSales() { this.salesCount++; }
+    public void increaseOrders(long quantity) {
+        this.orderCount++;
+        this.orderQuantity += quantity;
+    }
 
     public void increaseViews() { this.viewCount++; }
 }

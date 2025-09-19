@@ -40,7 +40,9 @@ public class LikeChangedMetricsConsumer {
             LocalDate today = LocalDate.now();
             ProductMetrics metrics = productMetricsRepository
                     .findByProductIdAndDate(event.productId(), today)
-                    .orElseGet(() -> new ProductMetrics(event.productId(), today));
+                    .orElseGet(() -> productMetricsRepository.save(
+                            new ProductMetrics(event.productId(), today)
+                    ));
 
             if (event.liked()) {
                 metrics.increaseLikes();
@@ -48,7 +50,7 @@ public class LikeChangedMetricsConsumer {
                 metrics.decreaseLikes();
             }
 
-            productMetricsRepository.saveAndFlush(metrics);
+            productMetricsRepository.save(metrics);
             eventHandledRepository.saveAndFlush(new EventHandled(event.eventId(), CONSUMER_NAME));
 
             log.info("Updated metrics for productId={}, date={}, likeCount={}",
