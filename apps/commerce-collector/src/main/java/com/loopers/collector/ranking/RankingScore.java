@@ -14,7 +14,7 @@ public class RankingScore {
     }
 
     public static double fromOrder(int quantity) {
-        return ORDER_COUNT_WEIGHT + ORDER_QUANTITY_WEIGHT * quantity;
+        return ORDER_COUNT_WEIGHT + (ORDER_QUANTITY_WEIGHT * quantity);
     }
 
     public static double fromView() {
