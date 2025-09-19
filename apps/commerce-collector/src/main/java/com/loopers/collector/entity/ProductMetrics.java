@@ -54,7 +54,7 @@ public class ProductMetrics {
         if (likeCount > 0) this.likeCount--;
     }
 
-    public void increaseOrders(long quantity) {
+    public void increaseOrder(long quantity) {
         this.orderCount++;
         this.orderQuantity += quantity;
     }
