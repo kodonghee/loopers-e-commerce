@@ -1,11 +1,13 @@
 package com.loopers.application.product;
 
+import com.loopers.application.event.MessagePublisher;
 import com.loopers.config.redis.RedisCacheConfig;
 import com.loopers.domain.brand.BrandReader;
 import com.loopers.domain.like.ProductLikeSummary;
 import com.loopers.domain.like.ProductLikeSummaryRepository;
 import com.loopers.domain.product.*;
 import com.loopers.domain.ranking.RankingRepository;
+import com.loopers.events.view.ProductViewedEvent;
 import com.loopers.infrastructure.product.ProductListCache;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
@@ -24,6 +26,7 @@ public class ProductFacade {
     private final BrandReader brandReader;
     private final ProductLikeSummaryRepository productLikeSummaryRepository;
     private final ProductListCache productListCache;
+    private final MessagePublisher messagePublisher;
 
     @Transactional
     public Product create(ProductCriteria command) {
@@ -67,6 +70,8 @@ public class ProductFacade {
                 .orElse(0L);
 
         Long rank = rankingRepository.getRank(LocalDate.now(), productId.toString());
+
+        messagePublisher.publish(ProductViewedEvent.of(productId));
 
         return ProductMapper.fromProduct(product, brandName, likeCount, rank);
     }

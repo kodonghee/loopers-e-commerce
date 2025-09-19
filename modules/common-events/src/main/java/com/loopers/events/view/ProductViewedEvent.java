@@ -9,28 +9,24 @@ import java.util.UUID;
 public record ProductViewedEvent(
         String eventId,
         Instant occurredAt,
-        Long productId,
-        String userId
+        Long productId
 ) {
     @JsonCreator
     public ProductViewedEvent(
             @JsonProperty("eventId") String eventId,
             @JsonProperty("occurredAt") Instant occurredAt,
-            @JsonProperty("productId") Long productId,
-            @JsonProperty("userId") String userId
+            @JsonProperty("productId") Long productId
     ) {
         this.eventId = eventId;
         this.occurredAt = occurredAt;
         this.productId = productId;
-        this.userId = userId;
     }
 
-    public static ProductViewedEvent of(Long productId, String userId) {
+    public static ProductViewedEvent of(Long productId) {
         return new ProductViewedEvent(
                 UUID.randomUUID().toString(),
                 Instant.now(),
-                productId,
-                userId
+                productId
         );
     }
 }
