@@ -1,9 +1,7 @@
 package com.loopers.collector.kafka;
 
 import com.loopers.collector.entity.EventHandled;
-import com.loopers.collector.entity.ProductMetrics;
 import com.loopers.collector.repository.EventHandledRepository;
-import com.loopers.collector.repository.ProductMetricsRepository;
 import com.loopers.collector.service.ProductMetricsService;
 import com.loopers.events.like.LikeChangedEvent;
 import lombok.RequiredArgsConstructor;
@@ -39,9 +37,9 @@ public class LikeChangedMetricsConsumer {
             }
 
             productMetricsService.handleLike(event.productId(), LocalDate.now(), event.liked());
-            eventHandledRepository.saveAndFlush(new EventHandled(event.eventId(), CONSUMER_NAME));
+            eventHandledRepository.save(new EventHandled(event.eventId(), CONSUMER_NAME));
 
-            log.info("Metrics updated for productId={}, date={}", event.productId(), LocalDate.now());
+            log.debug("Metrics updated for productId={}, date={}", event.productId(), LocalDate.now());
             ack.acknowledge();
 
         } catch (Exception e) {

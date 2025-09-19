@@ -41,9 +41,9 @@ public class OrderPlacedMetricsConsumer {
                     productMetricsService.handleOrder(item.productId(), today, item.quantity())
             );
 
-            eventHandledRepository.saveAndFlush(new EventHandled(event.eventId(), CONSUMER_NAME));
+            eventHandledRepository.save(new EventHandled(event.eventId(), CONSUMER_NAME));
 
-            log.info("Metrics updated for order event. orderId={}, date={}", event.orderId(), today);
+            log.debug("Metrics updated for order event. orderId={}, date={}", event.orderId(), today);
             ack.acknowledge();
 
         } catch (Exception e) {

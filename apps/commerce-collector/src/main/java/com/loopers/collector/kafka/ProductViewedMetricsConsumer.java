@@ -37,7 +37,7 @@ public class ProductViewedMetricsConsumer {
             }
 
             productMetricsService.handleView(event.productId(), LocalDate.now());
-            eventHandledRepository.saveAndFlush(new EventHandled(event.eventId(), CONSUMER_NAME));
+            eventHandledRepository.save(new EventHandled(event.eventId(), CONSUMER_NAME));
 
             log.info("Metrics updated for product view. productId={}, date={}", event.productId(), LocalDate.now());
             ack.acknowledge();

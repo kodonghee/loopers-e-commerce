@@ -16,34 +16,35 @@ public class ProductMetricsService {
 
     @Transactional
     public void handleLike(Long productId, LocalDate date, boolean isLike) {
-        ProductMetrics metrics = getOrCreate(productId, date);
-        if (isLike) {
-            metrics.increaseLikes();
-        } else {
-            metrics.decreaseLikes();
+        int updated = isLike
+                ? productMetricsRepository.incrementLike(productId, date)
+                : productMetricsRepository.decrementLike(productId, date);
+
+        if (updated == 0) {
+            ProductMetrics metrics = new ProductMetrics(productId, date);
+            if (isLike) metrics.increaseLikes();
+            else metrics.decreaseLikes();
+            productMetricsRepository.save(metrics);
         }
-        productMetricsRepository.save(metrics);
     }
 
     @Transactional
     public void handleOrder(Long productId, LocalDate date, long quantity) {
-        ProductMetrics metrics = getOrCreate(productId, date);
-        metrics.increaseOrder(quantity);
-        productMetricsRepository.save(metrics);
+        int updated = productMetricsRepository.incrementOrder(productId, date, quantity);
+        if (updated == 0) {
+            ProductMetrics metrics = new ProductMetrics(productId, date);
+            metrics.increaseOrder(quantity);
+            productMetricsRepository.save(metrics);
+        }
     }
 
     @Transactional
     public void handleView(Long productId, LocalDate date) {
-        ProductMetrics metrics = getOrCreate(productId, date);
-        metrics.increaseViews();
-        productMetricsRepository.save(metrics);
-    }
-
-    private ProductMetrics getOrCreate(Long productId, LocalDate date) {
-        return productMetricsRepository
-                .findByProductIdAndDate(productId, date)
-                .orElseGet(() -> productMetricsRepository.save(
-                        new ProductMetrics(productId, date)
-                ));
+        int updated = productMetricsRepository.incrementView(productId, date);
+        if (updated == 0) {
+            ProductMetrics metrics = new ProductMetrics(productId, date);
+            metrics.increaseViews();
+            productMetricsRepository.save(metrics);
+        }
     }
 }
