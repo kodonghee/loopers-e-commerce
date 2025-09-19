@@ -1,28 +1,34 @@
 package com.loopers.batch.reader;
 
 import com.loopers.batch.entity.AggregatedRanking;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import org.springframework.batch.item.ItemReader;
+import jakarta.persistence.EntityManagerFactory;
+import org.springframework.batch.item.database.JpaPagingItemReader;
+import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.util.Iterator;
-import java.util.List;
+import java.util.Map;
 
-public class WeeklyMetricsReader implements ItemReader<AggregatedRanking> {
+@Component
+public class WeeklyMetricsReader {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    private final EntityManagerFactory entityManagerFactory;
 
-    private Iterator<AggregatedRanking> iterator;
+    public WeeklyMetricsReader(EntityManagerFactory entityManagerFactory) {
+        this.entityManagerFactory = entityManagerFactory;
+    }
 
-    @Override
-    public AggregatedRanking read() {
-        if (iterator == null) {
-            LocalDate today = LocalDate.now();
-            LocalDate sevenDaysAgo = today.minusDays(6);
+    @Bean
+    public JpaPagingItemReader<AggregatedRanking> weeklyRankingItemReader() {
+        LocalDate today = LocalDate.now();
+        LocalDate sevenDaysAgo = today.minusDays(6);
 
-            List<AggregatedRanking> results = entityManager.createQuery("""
+        return new JpaPagingItemReaderBuilder<AggregatedRanking>()
+                .name("weeklyRankingItemReader")
+                .entityManagerFactory(entityManagerFactory)
+                .pageSize(100)
+                .queryString("""
                 SELECT new com.loopers.batch.entity.AggregatedRanking(
                     m.productId,
                     SUM(m.likeCount),
@@ -33,14 +39,11 @@ public class WeeklyMetricsReader implements ItemReader<AggregatedRanking> {
                 FROM ProductMetrics m
                 WHERE m.date BETWEEN :start AND :end
                 GROUP BY m.productId
-            """, AggregatedRanking.class)
-                    .setParameter("start", sevenDaysAgo)
-                    .setParameter("end", today)
-                    .getResultList();
-
-            iterator = results.iterator();
-        }
-
-        return iterator != null && iterator.hasNext() ? iterator.next() : null;
+            """)
+                .parameterValues(Map.of(
+                        "start", sevenDaysAgo,
+                        "end", today
+                ))
+                .build();
     }
 }

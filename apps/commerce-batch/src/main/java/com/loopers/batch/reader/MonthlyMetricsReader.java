@@ -1,46 +1,49 @@
 package com.loopers.batch.reader;
 
 import com.loopers.batch.entity.AggregatedRanking;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import org.springframework.batch.item.ItemReader;
+import jakarta.persistence.EntityManagerFactory;
+import org.springframework.batch.item.database.JpaPagingItemReader;
+import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.util.Iterator;
-import java.util.List;
+import java.util.Map;
 
-public class MonthlyMetricsReader implements ItemReader<AggregatedRanking> {
+@Component
+public class MonthlyMetricsReader {
 
-    @PersistenceContext
-    private EntityManager entityManager;
+    private final EntityManagerFactory entityManagerFactory;
 
-    private Iterator<AggregatedRanking> iterator;
+    public MonthlyMetricsReader(EntityManagerFactory entityManagerFactory) {
+        this.entityManagerFactory = entityManagerFactory;
+    }
 
-    @Override
-    public AggregatedRanking read() {
-        if (iterator == null) {
-            LocalDate today = LocalDate.now();
-            LocalDate thirtyDaysAgo = today.minusDays(29);
+    @Bean
+    public JpaPagingItemReader<AggregatedRanking> monthlyRankingItemReader() {
+        LocalDate today = LocalDate.now();
+        LocalDate thirtyDaysAgo = today.minusDays(29);
 
-            List<AggregatedRanking> results = entityManager.createQuery("""
-                SELECT new com.loopers.batch.entity.AggregatedRanking(
-                    m.productId,
-                    SUM(m.likeCount),
-                    SUM(m.orderCount),
-                    SUM(m.orderQuantity),
-                    SUM(m.viewCount)
-                )
-                FROM ProductMetrics m
-                WHERE m.date BETWEEN :start AND :end
-                GROUP BY m.productId
-            """, AggregatedRanking.class)
-                    .setParameter("start", thirtyDaysAgo)
-                    .setParameter("end", today)
-                    .getResultList();
-
-            iterator = results.iterator();
-        }
-
-        return iterator != null && iterator.hasNext() ? iterator.next() : null;
+        return new JpaPagingItemReaderBuilder<AggregatedRanking>()
+                .name("monthlyRankingItemReader")
+                .entityManagerFactory(entityManagerFactory)
+                .pageSize(100)
+                .queryString("""
+                    SELECT new com.loopers.batch.entity.AggregatedRanking(
+                        m.productId,
+                        SUM(m.likeCount),
+                        SUM(m.orderCount),
+                        SUM(m.orderQuantity),
+                        SUM(m.viewCount)
+                    )
+                    FROM ProductMetrics m
+                    WHERE m.date BETWEEN :start AND :end
+                    GROUP BY m.productId
+                """)
+                .parameterValues(Map.of(
+                        "start", thirtyDaysAgo,
+                        "end", today
+                ))
+                .build();
     }
 }
