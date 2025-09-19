@@ -20,7 +20,7 @@ public class WeeklyRankingWriter implements ItemWriter<AggregatedRanking> {
 
     @Override
     public void write(Chunk<? extends AggregatedRanking> items) {
-        String yearWeek = DateTimeFormatter.ofPattern("YYYY'W'ww")
+        String yearWeek = DateTimeFormatter.ofPattern("yyyy-'W'ww")
                 .format(LocalDateTime.now());
 
         for (AggregatedRanking item : items) {

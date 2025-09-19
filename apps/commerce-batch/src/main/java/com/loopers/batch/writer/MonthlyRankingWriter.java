@@ -32,7 +32,7 @@ public class MonthlyRankingWriter implements ItemWriter<AggregatedRanking> {
                   like_count = VALUES(like_count),
                   order_count = VALUES(order_count),
                   order_quantity = VALUES(order_quantity),
-                  view_count = VALUES(viewCount),
+                  view_count = VALUES(view_count),
                   updated_at = NOW()
             """)
                     .setParameter("productId", item.getProductId())
@@ -44,7 +44,7 @@ public class MonthlyRankingWriter implements ItemWriter<AggregatedRanking> {
 
             entityManager.createNativeQuery("""
                 INSERT IGNORE INTO history_product_rank_monthly
-                  (product_id, like_count, order_count, order_quantity, view_count, year_month, created_at)
+                  (product_id, like_count, order_count, order_quantity, view_count, yearmonth, created_at)
                 VALUES (:productId, :likeCount, :orderCount, :orderQuantity, :viewCount, :yearMonth, NOW())
             """)
                     .setParameter("productId", item.getProductId())
