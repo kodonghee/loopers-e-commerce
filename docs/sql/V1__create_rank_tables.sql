@@ -29,13 +29,17 @@ CREATE TABLE history_product_rank_weekly (
   PRIMARY KEY (product_id, year_week)
 );
 
+CREATE INDEX idx_history_weekly_period ON history_product_rank_weekly (`year_week`);
+
 CREATE TABLE history_product_rank_monthly (
   product_id     BIGINT NOT NULL,
   like_count     INT    NOT NULL,
   order_count    INT    NOT NULL,
   order_quantity INT    NOT NULL,
   view_count     INT    NOT NULL,
-  year_month     VARCHAR(7) NOT NULL,
+  yearmonth     VARCHAR(7) NOT NULL,
   created_at     DATETIME NOT NULL,
-  PRIMARY KEY (product_id, year_month)
+  PRIMARY KEY (product_id, yearmonth)
 );
+
+CREATE INDEX idx_history_monthly_period ON history_product_rank_monthly (`yearmonth`);
