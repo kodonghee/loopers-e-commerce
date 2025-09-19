@@ -4,8 +4,10 @@ import com.loopers.batch.entity.AggregatedRanking;
 import com.loopers.batch.processor.RankingAggregatorProcessor;
 import com.loopers.batch.reader.MonthlyMetricsReader;
 import com.loopers.batch.reader.WeeklyMetricsReader;
-import com.loopers.batch.writer.MonthlyRankingWriter;
-import com.loopers.batch.writer.WeeklyRankingWriter;
+import com.loopers.batch.writer.MonthlyHistoryRankingWriter;
+import com.loopers.batch.writer.MonthlyMvRankingWriter;
+import com.loopers.batch.writer.WeeklyHistoryRankingWriter;
+import com.loopers.batch.writer.WeeklyMvRankingWriter;
 import com.loopers.collector.entity.ProductMetrics;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -30,40 +32,66 @@ public class BatchConfig {
     }
 
     @Bean
-    public Step weeklyRankingStep(WeeklyMetricsReader weeklyMetricsReader,
+    public Step weeklyMvRankingStep(WeeklyMetricsReader weeklyMetricsReader,
                                   RankingAggregatorProcessor processor,
-                                  WeeklyRankingWriter weeklyRankingWriter) {
+                                  WeeklyMvRankingWriter weeklyMvRankingWriter) {
         return new StepBuilder("weeklyRankingStep", jobRepository)
                 .<ProductMetrics, AggregatedRanking>chunk(100, transactionManager)
                 .reader(weeklyMetricsReader.weeklyMetricsItemReader())
                 .processor(processor)
-                .writer(weeklyRankingWriter)
+                .writer(weeklyMvRankingWriter)
                 .build();
     }
 
     @Bean
-    public Step monthlyRankingStep(MonthlyMetricsReader monthlyMetricsReader,
-                                   RankingAggregatorProcessor processor,
-                                   MonthlyRankingWriter monthlyRankingWriter) {
+    public Step weeklyHistoryRankingStep(WeeklyMetricsReader weeklyMetricsReader,
+                                         RankingAggregatorProcessor processor,
+                                         WeeklyHistoryRankingWriter weeklyHistoryRankingWriter) {
+        return new StepBuilder("weeklyHistoryRankingStep", jobRepository)
+                .<ProductMetrics, AggregatedRanking>chunk(100, transactionManager)
+                .reader(weeklyMetricsReader.weeklyMetricsItemReader())
+                .processor(processor)
+                .writer(weeklyHistoryRankingWriter)
+                .build();
+    }
+
+    @Bean
+    public Step monthlyMvRankingStep(MonthlyMetricsReader monthlyMetricsReader,
+                                     RankingAggregatorProcessor processor,
+                                     MonthlyMvRankingWriter monthlyMvRankingWriter) {
         return new StepBuilder("monthlyRankingStep", jobRepository)
                 .<ProductMetrics, AggregatedRanking>chunk(100, transactionManager)
                 .reader(monthlyMetricsReader.monthlyMetricsItemReader())
                 .processor(processor)
-                .writer(monthlyRankingWriter)
+                .writer(monthlyMvRankingWriter)
                 .build();
     }
 
     @Bean
-    public Job weeklyRankingJob(Step weeklyRankingStep) {
+    public Step monthlyHistoryRankingStep(MonthlyMetricsReader monthlyMetricsReader,
+                                          RankingAggregatorProcessor processor,
+                                          MonthlyHistoryRankingWriter monthlyHistoryRankingWriter) {
+        return new StepBuilder("monthlyHistoryRankingStep", jobRepository)
+                .<ProductMetrics, AggregatedRanking>chunk(100, transactionManager)
+                .reader(monthlyMetricsReader.monthlyMetricsItemReader())
+                .processor(processor)
+                .writer(monthlyHistoryRankingWriter)
+                .build();
+    }
+
+    @Bean
+    public Job weeklyRankingJob(Step weeklyMvRankingStep, Step weeklyHistoryRankingStep) {
         return new JobBuilder("weeklyRankingJob", jobRepository)
-                .start(weeklyRankingStep)
+                .start(weeklyMvRankingStep)
+                .next(weeklyHistoryRankingStep)
                 .build();
     }
 
     @Bean
-    public Job monthlyRankingJob(Step monthlyRankingStep) {
+    public Job monthlyRankingJob(Step monthlyMvRankingStep, Step monthlyHistoryRankingStep) {
         return new JobBuilder("monthlyRankingJob", jobRepository)
-                .start(monthlyRankingStep)
+                .start(monthlyMvRankingStep)
+                .next(monthlyHistoryRankingStep)
                 .build();
     }
 }
