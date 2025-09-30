@@ -1,6 +1,6 @@
 package com.loopers.infrastructure.ranking;
 
-import com.loopers.domain.ranking.RankingRepository;
+import com.loopers.domain.ranking.DailyRankingRepository;
 import com.loopers.support.ranking.RankingKeyGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -12,7 +12,7 @@ import java.util.Set;
 
 @Repository
 @RequiredArgsConstructor
-public class RankingRedisRepository implements RankingRepository {
+public class DailyRankingRedisRepositoryImpl implements DailyRankingRepository {
 
     private final StringRedisTemplate redisTemplate;
 

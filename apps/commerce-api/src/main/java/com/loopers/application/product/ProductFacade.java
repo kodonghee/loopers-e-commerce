@@ -6,7 +6,7 @@ import com.loopers.domain.brand.BrandReader;
 import com.loopers.domain.like.ProductLikeSummary;
 import com.loopers.domain.like.ProductLikeSummaryRepository;
 import com.loopers.domain.product.*;
-import com.loopers.domain.ranking.RankingRepository;
+import com.loopers.domain.ranking.DailyRankingRepository;
 import com.loopers.events.view.ProductViewedEvent;
 import com.loopers.infrastructure.product.ProductListCache;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ import java.util.List;
 public class ProductFacade {
 
     private final ProductRepository productRepository;
-    private final RankingRepository rankingRepository;
+    private final DailyRankingRepository dailyRankingRepository;
     private final BrandReader brandReader;
     private final ProductLikeSummaryRepository productLikeSummaryRepository;
     private final ProductListCache productListCache;
@@ -69,7 +69,7 @@ public class ProductFacade {
                 .map(ProductLikeSummary::getLikeCount)
                 .orElse(0L);
 
-        Long rank = rankingRepository.getRank(LocalDate.now(), productId.toString());
+        Long rank = dailyRankingRepository.getRank(LocalDate.now(), productId.toString());
 
         messagePublisher.publish(ProductViewedEvent.of(productId));
 

@@ -13,13 +13,21 @@ import java.util.List;
 public interface RankingV1ApiSpec {
 
     @Operation(
-            summary = "일간 상품 랭킹 조회",
-            description = "날짜, 페이지 번호, 페이지당 상품 수에 따라 일간 상품 랭킹을 조회합니다."
+            summary = "상품 랭킹 조회",
+            description = """
+                period에 따라 조회되는 기준이 달라집니다.
+                - daily: 특정 날짜 기준 (date 필수)
+                - weekly: 최신 주간 랭킹 (date 불필요)
+                - monthly: 최신 월간 랭킹 (date 불필요)
+                """
     )
     @GetMapping("")
     ApiResponse<List<RankingV1Dto.RankingResponse>> getRankings(
-            @Parameter(description = "조회 날짜 (yyyyMMdd)", example = "20250912")
-            @RequestParam(name = "date") String date,
+            @Parameter(description = "조회 기간 (daily/weekly/monthly)", example = "daily")
+            @RequestParam(name = "period") String period,
+
+            @Parameter(description = "조회 날짜 (yyyyMMdd) — daily에서만 필수", example = "20250912")
+            @RequestParam(name = "date", required = false) String date,
 
             @Parameter(description = "페이지 번호", example = "0")
             @RequestParam(name = "page", defaultValue = "0") int page,
