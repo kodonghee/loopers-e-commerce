@@ -4,6 +4,7 @@ import com.loopers.application.event.MessagePublisher;
 import com.loopers.events.like.LikeChangedEvent;
 import com.loopers.events.order.OrderPlacedEvent;
 import com.loopers.events.stock.StockAdjustedEvent;
+import com.loopers.events.view.ProductViewedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -32,6 +33,8 @@ public class KafkaMessagePublisher implements MessagePublisher {
             return "stock-events";
         } else if (event instanceof OrderPlacedEvent) {
             return "order-events";
+        } else if (event instanceof ProductViewedEvent) {
+            return "view-events";
         }
 
         // TODO: 다른 이벤트 매핑 필요 시 추가
@@ -47,6 +50,9 @@ public class KafkaMessagePublisher implements MessagePublisher {
         }
         if (event instanceof OrderPlacedEvent orderEvent) {
             return orderEvent.orderId();
+        }
+        if (event instanceof ProductViewedEvent viewedEvent) {
+            return String.valueOf(viewedEvent.productId());
         }
         return null;
     }

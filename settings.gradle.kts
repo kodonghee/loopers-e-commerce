@@ -46,3 +46,5 @@ include("modules:common-events")
 findProject(":modules:common-events")?.name = "common-events"
 include("modules:common-support")
 findProject(":modules:common-support")?.name = "common-support"
+include("apps:commerce-batch")
+findProject(":apps:commerce-batch")?.name = "commerce-batch"

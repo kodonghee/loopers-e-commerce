@@ -6,7 +6,8 @@ import com.loopers.domain.brand.BrandReader;
 import com.loopers.domain.like.ProductLikeSummary;
 import com.loopers.domain.like.ProductLikeSummaryRepository;
 import com.loopers.domain.product.ProductRepository;
-import com.loopers.domain.ranking.RankingRepository;
+import com.loopers.domain.ranking.DailyRankingRepository;
+import com.loopers.domain.ranking.PeriodicRankingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,16 +18,17 @@ import java.util.List;
 @Service
 public class RankingService {
 
-    private final RankingRepository rankingRepository;
+    private final DailyRankingRepository dailyRankingRepository;
+    private final PeriodicRankingRepository periodicRankingRepository;
     private final ProductRepository productRepository;
     private final BrandReader brandReader;
     private final ProductLikeSummaryRepository likeSummaryRepository;
 
-    public List<ProductResult> getTopProducts(LocalDate date, int page, int size) {
+    public List<ProductResult> getDailyTopProducts(LocalDate date, int page, int size) {
         int start = (page - 1) * size;
         int end = start + size - 1;
 
-        List<String> productIds = rankingRepository.getTopProducts(date, start, end);
+        List<String> productIds = dailyRankingRepository.getTopProducts(date, start, end);
         return productRepository.findAllById(
                         productIds.stream().map(Long::valueOf).toList()
                 ).stream()
@@ -35,14 +37,22 @@ public class RankingService {
                     Long likeCount = likeSummaryRepository.findByProductId(product.getId())
                             .map(ProductLikeSummary::getLikeCount)
                             .orElse(0L);
-                    Long rank = rankingRepository.getRank(date, product.getId().toString());
+                    Long rank = dailyRankingRepository.getRank(date, product.getId().toString());
 
                     return ProductMapper.fromProduct(product, brandName, likeCount, rank);
                 })
                 .toList();
     }
 
+    public List<ProductResult> getWeeklyTopProducts(int page, int size) {
+        return periodicRankingRepository.getWeeklyTopProducts(page, size);
+    }
+
+    public List<ProductResult> getMonthlyTopProducts(int page, int size) {
+        return periodicRankingRepository.getMonthlyTopProducts(page, size);
+    }
+
     public Long getProductRank(LocalDate date, Long productId) {
-        return rankingRepository.getRank(date, productId.toString());
+        return dailyRankingRepository.getRank(date, productId.toString());
     }
 }
