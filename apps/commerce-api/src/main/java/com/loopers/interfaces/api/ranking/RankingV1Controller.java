@@ -1,11 +1,8 @@
 package com.loopers.interfaces.api.ranking;
 
-import com.loopers.application.product.ProductFacade;
 import com.loopers.application.product.ProductResult;
 import com.loopers.application.ranking.RankingService;
-import com.loopers.domain.product.ProductSearchCondition;
 import com.loopers.interfaces.api.ApiResponse;
-import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
