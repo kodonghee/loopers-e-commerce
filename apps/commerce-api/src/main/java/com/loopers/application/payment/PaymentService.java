@@ -9,8 +9,6 @@ import com.loopers.domain.payment.PaymentRepository;
 import com.loopers.domain.payment.PaymentStatus;
 import com.loopers.domain.payment.event.*;
 import com.loopers.domain.point.PointRepository;
-import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductRepository;
 import com.loopers.infrastructure.payment.pg.PgServerUnstableException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +30,6 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final CouponRepository couponRepository;
-    private final ProductRepository productRepository;
     private final OrderPaymentProcessor paymentProcessor;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -128,11 +125,7 @@ public class PaymentService {
                     .orElseThrow();
             point.use(finalAmount);
 
-            List<Product> products = productRepository.findByIdForUpdate(
-                    order.getOrderItems().stream().map(OrderItem::getProductId).toList()
-            );
-
-            paymentProcessor.confirmPayment(order, products);
+            paymentProcessor.confirmPayment(order);
             payment.updateStatus(null, PaymentStatus.SUCCESS, "포인트 결제 성공");
 
             eventPublisher.publishEvent(PaymentCompletedEvent.of(
@@ -183,14 +176,11 @@ public class PaymentService {
         payment.updateStatus(callback.paymentId(), newStatus, callback.reason());
 
         if (newStatus.isSuccess()) {
-            List<Product> products = productRepository.findByIdForUpdate(
-                    order.getOrderItems().stream().map(OrderItem::getProductId).toList()
-            );
             Coupon coupon = callback.couponId() != null
                     ? couponRepository.findById(callback.couponId()).orElse(null)
                     : null;
 
-            paymentProcessor.confirmPayment(order, products);
+            paymentProcessor.confirmPayment(order);
 
             eventPublisher.publishEvent(PaymentCompletedEvent.of(
                     order.getOrderId(),

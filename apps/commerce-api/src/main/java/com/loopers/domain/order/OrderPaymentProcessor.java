@@ -4,6 +4,7 @@ import com.loopers.application.event.MessagePublisher;
 import com.loopers.domain.coupon.Coupon;
 import com.loopers.domain.coupon.CouponRepository;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductRepository;
 import com.loopers.events.stock.StockAdjustedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -18,7 +19,7 @@ import java.util.stream.Collectors;
 @Component
 public class OrderPaymentProcessor {
 
-    private final CouponRepository couponRepository;
+    private final ProductRepository productRepository;
     private final MessagePublisher messagePublisher;
 
     /*
@@ -43,9 +44,12 @@ public class OrderPaymentProcessor {
      * 결제 확정 처리 (재고 차감 + 쿠폰 사용 + 주문 상태 변경)
      */
     @Transactional
-    public void confirmPayment(Order order, List<Product> products) {
+    public void confirmPayment(Order order) {
+        List<Long> productIds = order.getOrderItems().stream()
+                .map(OrderItem::getProductId).toList();
 
-        // 재고 차감
+        List<Product> products = productRepository.findByIdForUpdate(productIds);
+
         Map<Long, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
 

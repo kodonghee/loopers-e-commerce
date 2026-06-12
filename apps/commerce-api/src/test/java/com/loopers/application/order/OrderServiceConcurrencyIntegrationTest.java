@@ -234,7 +234,7 @@ class OrderServiceConcurrencyIntegrationTest {
                             order.getOrderItems().stream().map(OrderItem::getProductId).toList()
                     );
 
-                    orderPaymentProcessor.confirmPayment(order, products);
+                    orderPaymentProcessor.confirmPayment(order);
                 } catch (Exception ignored) {
                 } finally {
                     latch.countDown();
